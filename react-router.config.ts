@@ -20,7 +20,12 @@ export default {
     const staticRoutes = ["/", "/about", "/blog", "/blog/tags"];
 
     // Read all markdown files to get slugs and tags
-    const files = await fs.readdir(POSTS_DIR);
+    let files: string[] = [];
+    try {
+      files = await fs.readdir(POSTS_DIR);
+    } catch {
+      // Directory may not exist or be empty
+    }
     const slugs: string[] = [];
     const allTags = new Set<string>();
 

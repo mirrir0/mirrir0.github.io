@@ -93,7 +93,12 @@ export interface Post extends PostMeta {
 }
 
 export async function getAllPosts(): Promise<PostMeta[]> {
-  const files = await fs.readdir(POSTS_DIR);
+  let files: string[] = [];
+  try {
+    files = await fs.readdir(POSTS_DIR);
+  } catch {
+    return [];
+  }
   const posts = await Promise.all(
     files
       .filter((file) => file.endsWith(".md"))

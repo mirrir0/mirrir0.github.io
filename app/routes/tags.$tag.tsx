@@ -19,9 +19,9 @@ export async function loader({ params }: Route.LoaderArgs) {
   // Get posts for this tag
   const posts = await getPostsByTag(tagParam);
 
-  // If no posts found, throw 404
+  // Return empty posts instead of throwing 404 to allow prerendering placeholder routes
   if (posts.length === 0) {
-    throw new Response("Not Found", { status: 404 });
+    return { posts: [], tag: null, normalizedTag: normalizeTag(tagParam) };
   }
 
   // Get the display name (original casing)
@@ -30,8 +30,41 @@ export async function loader({ params }: Route.LoaderArgs) {
   return { posts, tag: tagDisplayName, normalizedTag: normalizeTag(tagParam) };
 }
 
+// Handle non-prerendered routes (when ssr:false and route not in prerender list)
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+  return { posts: [], tag: null, normalizedTag: normalizeTag(params.tag) };
+}
+
 export default function TagPage({ loaderData }: Route.ComponentProps) {
   const { posts, tag } = loaderData;
+
+  // Handle not found case
+  if (!tag || posts.length === 0) {
+    return (
+      <main className="py-8 md:py-12">
+        <h1 className="text-2xl font-display text-zinc-100 mb-4">
+          Tag Not Found
+        </h1>
+        <p className="text-zinc-400 mb-8">
+          No posts found with this tag.
+        </p>
+        <div className="flex gap-6">
+          <Link
+            to="/blog"
+            className="text-zinc-600 hover:text-zinc-400 font-mono text-sm"
+          >
+            &larr; all posts
+          </Link>
+          <Link
+            to="/blog/tags"
+            className="text-zinc-600 hover:text-zinc-400 font-mono text-sm"
+          >
+            all tags
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="py-8 md:py-12">

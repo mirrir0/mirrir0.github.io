@@ -51,6 +51,14 @@ export default {
     const blogPostRoutes = slugs.map((slug) => `/blog/${slug}`);
     const tagRoutes = Array.from(allTags).map((tag) => `/blog/tags/${tag}`);
 
-    return [...staticRoutes, ...blogPostRoutes, ...tagRoutes];
+    // When no posts exist, include placeholder paths so route loader exports are valid
+    // (React Router requires routes with loaders to have at least one prerender path when ssr:false)
+    // These will generate 404 pages which is correct behavior
+    const placeholderRoutes =
+      slugs.length === 0
+        ? ["/blog/_", "/blog/tags/_"]
+        : [];
+
+    return [...staticRoutes, ...blogPostRoutes, ...tagRoutes, ...placeholderRoutes];
   },
 } satisfies Config;

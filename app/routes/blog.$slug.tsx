@@ -17,16 +17,39 @@ export function meta({ data }: Route.MetaArgs) {
 
 export async function loader({ params }: Route.LoaderArgs) {
   const post = await getPostBySlug(params.slug);
-  if (!post) {
-    throw new Response("Not Found", { status: 404 });
-  }
+  // Return null post instead of throwing 404 to allow prerendering placeholder routes
   return { post };
+}
+
+// Handle non-prerendered routes (when ssr:false and route not in prerender list)
+export async function clientLoader() {
+  return { post: null };
 }
 
 export default function BlogPost({ loaderData }: Route.ComponentProps) {
   const { post } = loaderData;
   const { openPDF } = usePDFViewer();
   const articleRef = useRef<HTMLDivElement>(null);
+
+  // Handle not found case
+  if (!post) {
+    return (
+      <main className="py-8 md:py-12">
+        <h1 className="text-2xl font-display text-zinc-100 mb-4">
+          Post Not Found
+        </h1>
+        <p className="text-zinc-400 mb-8">
+          The post you're looking for doesn't exist.
+        </p>
+        <Link
+          to="/blog"
+          className="text-zinc-600 hover:text-zinc-400 font-mono text-sm"
+        >
+          &larr; back to blog
+        </Link>
+      </main>
+    );
+  }
 
   // Handle clicks on PDF links
   // Only intercept normal left clicks - let cmd+click, ctrl+click, middle-click, right-click work normally

@@ -16,7 +16,7 @@ export default function Home() {
     <main className="py-8 md:py-12">
       <div className="font-mono space-y-6">
         <p className="text-zinc-400">
-          Staring into the wired, and the wired looking back very confused.
+          Staring into the wired, and the wired is looking back very confused.
         </p>
       </div>
 

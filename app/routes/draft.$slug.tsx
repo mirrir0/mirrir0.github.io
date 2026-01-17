@@ -274,12 +274,6 @@ export default function DraftEditor() {
     <main className="py-8 md:py-12">
       <article>
         <header className="mb-6 md:mb-8 pb-6 md:pb-8 border-b border-zinc-800">
-          <div className="mb-4">
-            <span className="text-xs font-mono px-2 py-1 bg-amber-900/50 text-amber-400 rounded">
-              DRAFT
-            </span>
-          </div>
-
           <FrontmatterEditor
             frontmatter={frontmatter}
             onChange={setFrontmatter}

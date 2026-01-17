@@ -14,6 +14,8 @@ import { FaPersonThroughWindow } from "react-icons/fa6";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { PDFViewerProvider, usePDFViewer } from "./components/pdf-viewer";
+import { EditorProvider, useEditorContext } from "./components/editor/EditorContext";
+import { DraftMenu } from "./components/DraftMenu";
 
 // Client-only wrapper for PDF viewer
 function ClientOnly({ children }: { children: React.ReactNode }) {
@@ -64,6 +66,13 @@ function getDisplayInfo(pathname: string) {
     const slug = pathname.replace("/blog/", "");
     return { mode: "READ", path: `~/blog/${slug}`, section: "blog" };
   }
+  if (pathname.startsWith("/draft/")) {
+    const slug = pathname.replace("/draft/", "");
+    return { mode: "DRAFT", path: `~/drafts/${slug}`, section: "editor" };
+  }
+  if (pathname === "/drafts") {
+    return { mode: "NORMAL", path: "~/drafts/", section: "index" };
+  }
   return { mode: "NORMAL", path: `~${pathname}`, section: "page" };
 }
 
@@ -71,6 +80,10 @@ function VimStatusline() {
   const location = useLocation();
   const [scrollInfo, setScrollInfo] = useState({ line: 1, col: 1, percent: 0 });
   const [headingTrail, setHeadingTrail] = useState<string[]>([]);
+  const editorContext = useEditorContext();
+
+  const isDraftEditor = location.pathname.startsWith("/draft/");
+  const hasEditorActions = isDraftEditor && editorContext?.onSave;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -116,9 +129,28 @@ function VimStatusline() {
 
   return (
     <div className="font-mono text-xs flex">
-      <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
-        {mode}
-      </span>
+      {/* Left side: [editor][draft][save] {text} */}
+      {hasEditorActions && editorContext ? (
+        <>
+          <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
+            EDITOR
+          </span>
+          <span className="bg-amber-500 text-zinc-900 px-2 py-0.5 font-bold">
+            DRAFT
+          </span>
+          <button
+            onClick={() => editorContext.onSave?.()}
+            disabled={editorContext.isSaving}
+            className="bg-zinc-700 text-zinc-300 px-2 py-0.5 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Save
+          </button>
+        </>
+      ) : (
+        <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
+          {mode}
+        </span>
+      )}
       <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 truncate max-w-md">
         {headingTrail.length > 0
           ? headingTrail.map((h, i) => (
@@ -130,10 +162,35 @@ function VimStatusline() {
           : path}
       </span>
       <span className="bg-zinc-800 flex-1" />
-      <span className="bg-zinc-700 text-zinc-400 px-2 py-0.5">{section}</span>
-      <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
-        {scrollInfo.percent}%
-      </span>
+
+      {/* Right side: [saved notification][menu] */}
+      {hasEditorActions && editorContext ? (
+        <>
+          {editorContext.saveStatus !== "idle" && (
+            <span className="bg-zinc-800 text-zinc-400 px-2 py-0.5">
+              {editorContext.saveStatus === "saving" && (
+                <span className="text-amber-400 animate-pulse">saving...</span>
+              )}
+              {editorContext.saveStatus === "saved" && (
+                <span className="text-emerald-400 animate-fade-out">Saved</span>
+              )}
+            </span>
+          )}
+          <DraftMenu
+            variant="statusline"
+            onPublish={() => editorContext.onPublish?.()}
+            onDelete={() => editorContext.onDelete?.()}
+            disabled={editorContext.isPublishing}
+          />
+        </>
+      ) : (
+        <>
+          <span className="bg-zinc-700 text-zinc-400 px-2 py-0.5">{section}</span>
+          <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
+            {scrollInfo.percent}%
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -176,6 +233,8 @@ function Header() {
   const location = useLocation();
   const isBlogPost =
     location.pathname.startsWith("/blog/") && location.pathname !== "/blog/";
+  const isDraftEditor = location.pathname.startsWith("/draft/");
+  const showStatusline = isBlogPost || isDraftEditor;
 
   return (
     <header className="sticky top-0 z-50 py-2 md:py-3 bg-zinc-950">
@@ -211,7 +270,7 @@ function Header() {
           </Link>
         </div>
       </nav>
-      {isBlogPost && (
+      {showStatusline && (
         <div className="mt-2">
           <VimStatusline />
         </div>
@@ -244,15 +303,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <PDFViewerProvider>
-          <MainContent>{children}</MainContent>
-          {/* PDF Viewer Panel (client-only) */}
-          <ClientOnly>
-            <Suspense fallback={null}>
-              <PDFViewerPanel />
-            </Suspense>
-          </ClientOnly>
-        </PDFViewerProvider>
+        <EditorProvider>
+          <PDFViewerProvider>
+            <MainContent>{children}</MainContent>
+            {/* PDF Viewer Panel (client-only) */}
+            <ClientOnly>
+              <Suspense fallback={null}>
+                <PDFViewerPanel />
+              </Suspense>
+            </ClientOnly>
+          </PDFViewerProvider>
+        </EditorProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

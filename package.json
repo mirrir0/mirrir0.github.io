@@ -14,11 +14,18 @@
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
     "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/extension-code-block-lowlight": "^2.27.2",
+    "@tiptap/extension-image": "^2.0.0",
+    "@tiptap/extension-link": "^2.0.0",
+    "@tiptap/react": "^2.0.0",
+    "@tiptap/starter-kit": "^2.0.0",
     "@types/p5": "^1.7.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
+    "highlight.js": "^11.11.1",
     "isbot": "^5.1.31",
+    "lowlight": "^3.3.0",
     "lucide-react": "^0.562.0",
     "marked": "^17.0.1",
     "p5": "^2.1.2",
@@ -31,7 +38,8 @@
     "react-router": "7.10.1",
     "shiki": "^3.20.0",
     "tailwind-merge": "^3.4.0",
-    "three": "^0.167.1"
+    "three": "^0.167.1",
+    "tiptap-markdown": "^0.8.0"
   },
   "devDependencies": {
     "@react-router/dev": "7.10.1",

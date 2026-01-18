@@ -5,8 +5,11 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { Markdown } from "tiptap-markdown";
 import EditorToolbar from "./EditorToolbar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { lowlight } from "~/lib/lowlight";
+import { PDFLinkNode } from "./pdf-node";
+import { SlashCommands } from "./slash-commands";
+import { DocumentPicker } from "./document-picker";
 
 interface TiptapEditorProps {
   content: string; // markdown content
@@ -14,6 +17,9 @@ interface TiptapEditorProps {
 }
 
 export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
+  const [isDocPickerOpen, setIsDocPickerOpen] = useState(false);
+  const [docPickerTab, setDocPickerTab] = useState<'search' | 'upload'>('search');
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -27,15 +33,28 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
       }),
       Link.configure({ openOnClick: false }),
       Image,
+      PDFLinkNode,
+      SlashCommands,
       Markdown,
     ],
     content, // Will be parsed as markdown by tiptap-markdown
+    immediatelyRender: false, // Fix SSR hydration warning
     onUpdate: ({ editor }) => {
       // Export markdown via editor.storage.markdown.getMarkdown()
       const markdown = editor.storage.markdown.getMarkdown();
       onChange(markdown);
     },
   });
+
+  // Listen for slash command events to open document picker
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      setDocPickerTab(e.detail.type === 'upload' ? 'upload' : 'search');
+      setIsDocPickerOpen(true);
+    };
+    window.addEventListener('editor:open-document-picker', handler as EventListener);
+    return () => window.removeEventListener('editor:open-document-picker', handler as EventListener);
+  }, []);
 
   // Update editor content when prop changes externally
   useEffect(() => {
@@ -47,7 +66,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   return (
     <div className="flex flex-col">
       <div className="sticky top-[120px] z-10 bg-zinc-950">
-        <EditorToolbar editor={editor} />
+        <EditorToolbar editor={editor} onOpenDocumentPicker={() => setIsDocPickerOpen(true)} />
       </div>
       <div className="flex-1">
         <EditorContent
@@ -68,6 +87,15 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
             [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px]"
         />
       </div>
+      <DocumentPicker
+        isOpen={isDocPickerOpen}
+        onClose={() => setIsDocPickerOpen(false)}
+        defaultTab={docPickerTab}
+        onSelect={(file: string, page?: number) => {
+          editor?.commands.setPDFLink({ file, page: page ?? 1 });
+          setIsDocPickerOpen(false);
+        }}
+      />
     </div>
   );
 }

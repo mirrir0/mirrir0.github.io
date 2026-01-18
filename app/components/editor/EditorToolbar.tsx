@@ -17,13 +17,15 @@ import {
   Image,
   Undo,
   Redo,
+  FileText,
 } from "lucide-react";
 
 interface EditorToolbarProps {
   editor: Editor | null;
+  onOpenDocumentPicker?: () => void;
 }
 
-export default function EditorToolbar({ editor }: EditorToolbarProps) {
+export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorToolbarProps) {
   if (!editor) {
     return null;
   }
@@ -187,6 +189,14 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Add Image"
       >
         <Image size={iconSize} />
+      </button>
+      <button
+        type="button"
+        onClick={onOpenDocumentPicker}
+        className={buttonClass()}
+        title="Insert PDF Link"
+      >
+        <FileText size={iconSize} />
       </button>
 
       <div className="w-px h-4 bg-zinc-800 mx-1" />

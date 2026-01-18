@@ -13,7 +13,9 @@ const routes: RouteConfig = [
 if (import.meta.env.DEV) {
   routes.push(
     route("drafts", "routes/drafts.tsx"),
-    route("draft/:slug", "routes/draft.$slug.tsx")
+    route("draft/:slug", "routes/draft.$slug.tsx"),
+    route("api/list-pdfs", "routes/api.list-pdfs.ts"),
+    route("api/upload-pdf", "routes/api.upload-pdf.ts")
   );
 }
 

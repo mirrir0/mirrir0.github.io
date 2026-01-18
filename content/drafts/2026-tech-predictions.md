@@ -30,6 +30,7 @@ Making predictions is easy, but being able to articulate them well enough such t
 ## 3. --dangerously-skip-permissions is gonna get someone killed
 
 - I agree with Simon Willison's \[Challenger Disaster Prediction\](link here)
+
 - this is going to be probably exposed much later than it should
+
   - my best guess is that it has already happened
-  - 

@@ -38,7 +38,7 @@ This blog will cover topics like:
 
 ## PDF Viewer Demo
 
-Check out this Online Finetuning paper to see the PDF viewer in action. You can also link to a specific page with highlighting like page 2 with decision highlight.
+Check out this Online Finetuning paper to see the PDF viewer in action. You can also link to a specific page with highlighting like page 2 with decision highlight. 
 
 ---
 

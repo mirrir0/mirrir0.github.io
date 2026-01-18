@@ -42,26 +42,25 @@ export default function FrontmatterEditor({ frontmatter, onChange }: Frontmatter
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr] gap-3">
-        <div className="flex items-start gap-2">
-          <label className="text-zinc-500 text-sm font-mono shrink-0 pt-1">desc:</label>
-          <textarea
-            value={frontmatter.description}
-            onChange={(e) => handleChange("description", e.target.value)}
-            rows={2}
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none resize-none"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-zinc-500 text-sm font-mono shrink-0">tags:</label>
-          <input
-            type="text"
-            value={frontmatter.tags.join(", ")}
-            onChange={(e) => handleChange("tags", e.target.value)}
-            placeholder="tag1, tag2"
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none"
-          />
-        </div>
+      <div className="flex items-start gap-2 mb-2">
+        <label className="text-zinc-500 text-sm font-mono shrink-0 pt-1">desc:</label>
+        <textarea
+          value={frontmatter.description}
+          onChange={(e) => handleChange("description", e.target.value)}
+          rows={2}
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none resize-none"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <label className="text-zinc-500 text-sm font-mono shrink-0">tags:</label>
+        <input
+          type="text"
+          value={frontmatter.tags.join(", ")}
+          onChange={(e) => handleChange("tags", e.target.value)}
+          placeholder="tag1, tag2"
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none"
+        />
       </div>
     </div>
   );

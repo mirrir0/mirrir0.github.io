@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { X } from "lucide-react";
+
 interface Frontmatter {
   title: string;
   date: string;
@@ -11,57 +14,100 @@ interface FrontmatterEditorProps {
 }
 
 export default function FrontmatterEditor({ frontmatter, onChange }: FrontmatterEditorProps) {
+  const [tagInput, setTagInput] = useState("");
+
   const handleChange = (field: keyof Frontmatter, value: string) => {
-    if (field === "tags") {
-      onChange({ ...frontmatter, tags: value.split(",").map(t => t.trim()) });
-    } else {
-      onChange({ ...frontmatter, [field]: value });
+    onChange({ ...frontmatter, [field]: value });
+  };
+
+  const addTag = () => {
+    const tag = tagInput.trim();
+    if (tag && !frontmatter.tags.includes(tag)) {
+      onChange({ ...frontmatter, tags: [...frontmatter.tags, tag] });
+    }
+    setTagInput("");
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    onChange({ ...frontmatter, tags: frontmatter.tags.filter(t => t !== tagToRemove) });
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addTag();
     }
   };
 
   return (
-    <div className="border border-zinc-800 rounded-lg px-4 py-3 mb-4 bg-zinc-900/50">
-      <div className="grid grid-cols-[1fr_190px] gap-3 mb-2">
-        <div className="flex items-center gap-2">
-          <label className="text-zinc-500 text-sm font-mono shrink-0">title:</label>
-          <input
-            type="text"
-            value={frontmatter.title}
-            onChange={(e) => handleChange("title", e.target.value)}
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-zinc-500 text-sm font-mono shrink-0">date:</label>
-          <input
-            type="date"
-            value={frontmatter.date}
-            onChange={(e) => handleChange("date", e.target.value)}
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none"
-          />
-        </div>
+    <div className="mb-4 font-mono text-sm">
+      {/* Opening delimiter */}
+      <div className="text-zinc-600 select-none">---</div>
+
+      {/* Title field */}
+      <div className="flex items-start py-0.5">
+        <span className="text-zinc-500 shrink-0">title:</span>
+        <textarea
+          value={frontmatter.title}
+          onChange={(e) => handleChange("title", e.target.value)}
+          className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none [field-sizing:content]"
+        />
       </div>
 
-      <div className="flex items-start gap-2 mb-2">
-        <label className="text-zinc-500 text-sm font-mono shrink-0 pt-1">desc:</label>
+      {/* Date field */}
+      <div className="flex items-center py-0.5">
+        <span className="text-zinc-500 shrink-0">date:</span>
+        <input
+          type="date"
+          value={frontmatter.date}
+          onChange={(e) => handleChange("date", e.target.value)}
+          className="bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1"
+        />
+      </div>
+
+      {/* Description field */}
+      <div className="flex items-start py-0.5">
+        <span className="text-zinc-500 shrink-0">description:</span>
         <textarea
           value={frontmatter.description}
           onChange={(e) => handleChange("description", e.target.value)}
-          rows={2}
-          className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none resize-none"
+          className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none [field-sizing:content]"
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <label className="text-zinc-500 text-sm font-mono shrink-0">tags:</label>
-        <input
-          type="text"
-          value={frontmatter.tags.join(", ")}
-          onChange={(e) => handleChange("tags", e.target.value)}
-          placeholder="tag1, tag2"
-          className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-100 font-mono text-sm focus:border-emerald-400 focus:outline-none"
-        />
+      {/* Tags field */}
+      <div className="flex items-center py-0.5">
+        <span className="text-zinc-500 shrink-0">tags:</span>
+        <div className="flex flex-wrap gap-1.5 ml-1 items-center">
+          {frontmatter.tags.map((tag) => (
+            <span
+              key={tag}
+              className="bg-zinc-800 text-zinc-400 px-1.5 py-0.5 text-xs inline-flex items-center gap-1"
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={() => removeTag(tag)}
+                className="text-zinc-600 hover:text-zinc-300"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            onBlur={addTag}
+            placeholder="+"
+            className="bg-transparent text-zinc-400 w-12 focus:outline-none text-xs focus:w-20 transition-all"
+          />
+        </div>
       </div>
+
+      {/* Closing delimiter */}
+      <div className="text-zinc-600 select-none">---</div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { X } from "lucide-react";
 
 interface Frontmatter {
@@ -15,6 +15,20 @@ interface FrontmatterEditorProps {
 
 export default function FrontmatterEditor({ frontmatter, onChange }: FrontmatterEditorProps) {
   const [tagInput, setTagInput] = useState("");
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = (textarea: HTMLTextAreaElement | null) => {
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
+  useLayoutEffect(() => {
+    autoResize(titleRef.current);
+    autoResize(descriptionRef.current);
+  }, [frontmatter.title, frontmatter.description]);
 
   const handleChange = (field: keyof Frontmatter, value: string) => {
     onChange({ ...frontmatter, [field]: value });
@@ -48,9 +62,11 @@ export default function FrontmatterEditor({ frontmatter, onChange }: Frontmatter
       <div className="flex items-start py-0.5">
         <span className="text-zinc-500 shrink-0">title:</span>
         <textarea
+          ref={titleRef}
           value={frontmatter.title}
           onChange={(e) => handleChange("title", e.target.value)}
-          className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none [field-sizing:content]"
+          rows={1}
+          className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none overflow-hidden"
         />
       </div>
 
@@ -69,9 +85,11 @@ export default function FrontmatterEditor({ frontmatter, onChange }: Frontmatter
       <div className="flex items-start py-0.5">
         <span className="text-zinc-500 shrink-0">description:</span>
         <textarea
+          ref={descriptionRef}
           value={frontmatter.description}
           onChange={(e) => handleChange("description", e.target.value)}
-          className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none [field-sizing:content]"
+          rows={1}
+          className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none overflow-hidden"
         />
       </div>
 

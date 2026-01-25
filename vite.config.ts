@@ -8,6 +8,9 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  server: {
+    strictPort: false, // Automatically use next available port if default is taken
+  },
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
   optimizeDeps: {
     include: ['p5', 'react-pdf'],

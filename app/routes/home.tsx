@@ -20,7 +20,7 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="mt-8 rounded-xl overflow-hidden border-4 border-emerald-500 shadow-[8px_8px_0_rgb(16,185,129)]">
+      <div className="mt-8 mx-auto w-[95%] rounded-xl overflow-hidden border-4 border-emerald-500 shadow-[8px_8px_0_rgb(16,185,129)]">
         <div style={{ width: '100%', height: '600px', position: 'relative' }}>
           <Suspense fallback={<div className="w-full h-full bg-zinc-900" />}>
             <Dither

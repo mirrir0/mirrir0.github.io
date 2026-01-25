@@ -9,8 +9,8 @@ function normalizeTag(tag: string): string {
 }
 
 export default {
-  // Disable runtime SSR - pages will be pre-rendered at build time
-  ssr: false,
+  // Enable SSR in development to support loaders/actions, disable in production for static site generation
+  ssr: process.env.NODE_ENV === "development",
 
   // Pre-render all routes at build time for GitHub Pages
   async prerender() {

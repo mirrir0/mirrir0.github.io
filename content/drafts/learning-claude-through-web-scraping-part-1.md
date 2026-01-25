@@ -18,4 +18,4 @@ The goal of this blog post is to serve as a jumping off point for a non-technica
 
 By the end of this blog post you should be able to...
 
-- explain the structure of the problem
+- explain the structure of the problem 

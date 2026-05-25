@@ -5,6 +5,20 @@ import matter from "gray-matter";
 const DRAFTS_DIR = path.join(process.cwd(), "content/drafts");
 const POSTS_DIR = path.join(process.cwd(), "content/posts");
 
+/**
+ * Converts a human-readable title to a filesystem-safe slug.
+ * "My Cool Blog Post" → "my-cool-blog-post"
+ */
+export function titleToSlug(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")  // strip special chars
+    .replace(/\s+/g, "-")           // spaces → hyphens
+    .replace(/-+/g, "-")            // collapse multiple hyphens
+    .replace(/^-|-$/g, "");          // trim leading/trailing hyphens
+}
+
 export interface DraftMeta {
   slug: string;
   title: string;
@@ -99,9 +113,9 @@ export async function saveDraft(
 /**
  * Creates a new draft with default frontmatter
  */
-export async function createDraft(slug: string): Promise<void> {
+export async function createDraft(slug: string, title?: string): Promise<void> {
   const defaultFrontmatter = {
-    title: slug,
+    title: title || slug,
     date: new Date().toISOString(),
     description: "",
     tags: [],

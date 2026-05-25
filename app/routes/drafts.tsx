@@ -1,7 +1,7 @@
 import { Link, Form, useLoaderData, useFetcher } from "react-router";
 import { redirect } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs, MetaFunction } from "react-router";
-import { getAllDrafts, createDraft, deleteDraft, publishDraft, type DraftMeta } from "~/lib/drafts.server";
+import { getAllDrafts, createDraft, deleteDraft, publishDraft, titleToSlug, type DraftMeta } from "~/lib/drafts.server";
 import { DraftMenu } from "~/components/DraftMenu";
 
 export const meta: MetaFunction = () => {
@@ -25,10 +25,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const formData = await request.formData();
   const intent = formData.get("intent");
-  const slug = formData.get("slug") as string;
+  const title = formData.get("title") as string;
+  const slug = title ? titleToSlug(title) : (formData.get("slug") as string);
 
   if (intent === "create" && slug) {
-    await createDraft(slug);
+    await createDraft(slug, title);
     return redirect(`/draft/${slug}`);
   }
 
@@ -44,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Backwards compatibility for create form without intent
   if (slug) {
-    await createDraft(slug);
+    await createDraft(slug, title);
     return redirect(`/draft/${slug}`);
   }
 
@@ -132,11 +133,9 @@ export default function DraftsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            name="slug"
-            placeholder="new-draft-slug"
+            name="title"
+            placeholder="My New Post Title"
             required
-            pattern="[a-z0-9-]+"
-            title="Lowercase letters, numbers, and hyphens only"
             className="flex-1 px-4 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
           />
           <button

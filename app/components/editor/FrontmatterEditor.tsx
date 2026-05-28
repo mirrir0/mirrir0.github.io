@@ -11,9 +11,11 @@ interface Frontmatter {
 interface FrontmatterEditorProps {
   frontmatter: Frontmatter;
   onChange: (frontmatter: Frontmatter) => void;
+  slug: string;
+  onSlugChange: (slug: string) => void;
 }
 
-export default function FrontmatterEditor({ frontmatter, onChange }: FrontmatterEditorProps) {
+export default function FrontmatterEditor({ frontmatter, onChange, slug, onSlugChange }: FrontmatterEditorProps) {
   const [tagInput, setTagInput] = useState("");
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -65,8 +67,20 @@ export default function FrontmatterEditor({ frontmatter, onChange }: Frontmatter
           ref={titleRef}
           value={frontmatter.title}
           onChange={(e) => handleChange("title", e.target.value)}
+          onInput={(e) => autoResize(e.currentTarget)}
           rows={1}
           className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none overflow-hidden"
+        />
+      </div>
+
+      {/* Slug field */}
+      <div className="flex items-start py-0.5">
+        <span className="text-zinc-500 shrink-0">slug:</span>
+        <input
+          type="text"
+          value={slug}
+          onChange={(e) => onSlugChange(e.target.value)}
+          className="flex-1 bg-transparent text-zinc-300 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 w-full"
         />
       </div>
 
@@ -88,6 +102,7 @@ export default function FrontmatterEditor({ frontmatter, onChange }: Frontmatter
           ref={descriptionRef}
           value={frontmatter.description}
           onChange={(e) => handleChange("description", e.target.value)}
+          onInput={(e) => autoResize(e.currentTarget)}
           rows={1}
           className="flex-1 bg-transparent text-zinc-100 focus:outline-none border-b border-transparent focus:border-emerald-400 ml-1 resize-none overflow-hidden"
         />

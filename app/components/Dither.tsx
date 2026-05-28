@@ -314,7 +314,8 @@ export default function Dither({
       className="w-full h-full relative"
       camera={{ position: [0, 0, 6] }}
       dpr={1}
-      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      frameloop="always"
+      gl={{ antialias: true }}
     >
       <DitheredWaves
         waveSpeed={waveSpeed}

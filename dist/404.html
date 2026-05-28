@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - Page Not Found</title>
+  <script>
+    // GitHub Pages SPA redirect
+    // Store the path and redirect to root for client-side routing
+    sessionStorage.setItem('redirectPath', window.location.pathname);
+    window.location.replace('/');
+  </script>
+  <style>
+    body {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      background: #09090b;
+      color: #a1a1aa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container { text-align: center; }
+    h1 { color: #34d399; font-size: 4rem; margin: 0; }
+    p { margin: 1rem 0; }
+    a { color: #34d399; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <noscript>
+    <div class="container">
+      <h1>404</h1>
+      <p>Page not found</p>
+      <a href="/">Go home</a>
+    </div>
+  </noscript>
+</body>
+</html>

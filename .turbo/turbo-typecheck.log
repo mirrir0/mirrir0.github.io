@@ -1,0 +1,15 @@
+
+> @anomalous/blog@ typecheck /Users/orchid/mirrir/anomalous/panels/blog
+> tsc --noEmit
+
+app/components/Dither.tsx(6,24): error TS7016: Could not find a declaration file for module 'three'. '/Users/orchid/mirrir/anomalous/node_modules/.pnpm/three@0.167.1/node_modules/three/build/three.module.js' implicitly has an 'any' type.
+  If the 'three' package actually exposes this module, consider sending a pull request to amend 'https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/three'
+app/components/pdf-viewer/PDFViewerPanel.tsx(268,14): error TS2604: JSX element type 'Document' does not have any construct or call signatures.
+app/components/pdf-viewer/PDFViewerPanel.tsx(268,14): error TS2786: 'Document' cannot be used as a JSX component.
+  Its type 'ComponentType<DocumentProps> | undefined' is not a valid JSX element type.
+    Type 'undefined' is not assignable to type 'ElementType'.
+app/components/pdf-viewer/PDFViewerPanel.tsx(289,20): error TS2604: JSX element type 'Page' does not have any construct or call signatures.
+app/components/pdf-viewer/PDFViewerPanel.tsx(289,20): error TS2786: 'Page' cannot be used as a JSX component.
+  Its type 'ComponentType<PageProps> | undefined' is not a valid JSX element type.
+    Type 'undefined' is not assignable to type 'ElementType'.
+ ELIFECYCLE  Command failed with exit code 2.

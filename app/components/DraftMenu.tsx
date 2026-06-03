@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { MoreVertical } from "lucide-react";
 
 interface DraftMenuProps {
@@ -6,6 +6,7 @@ interface DraftMenuProps {
   onDelete: () => void;
   variant?: "statusline" | "list";
   disabled?: boolean;
+  publishLabel?: string;
 }
 
 export function DraftMenu({
@@ -13,8 +14,10 @@ export function DraftMenu({
   onDelete,
   variant = "list",
   disabled = false,
+  publishLabel = "Publish",
 }: DraftMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [pubState, setPubState] = useState<"idle" | "publishing" | "error">("idle");
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -90,7 +93,7 @@ export function DraftMenu({
             onClick={handlePublish}
             className="w-full text-left px-3 py-1.5 text-sm font-mono text-zinc-300 hover:bg-zinc-700 hover:text-emerald-400 transition-colors"
           >
-            Publish
+            {publishLabel}
           </button>
           <button
             onClick={handleDelete}

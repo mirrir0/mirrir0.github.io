@@ -1,6 +1,5 @@
 ---
 title: 'Learning Claude Through Web Scraping Part 1: Thinking About Thinking'
-date: '2026-01-19T18:09:29.474Z'
 description: >-
   This is part 1 of a series of blog posts I'm writing to help my girlfriend
   learn to program as well as use Claude Code. In this part our goal is to
@@ -13,6 +12,7 @@ tags:
   - javascript
   - web scraping
   - claude code
+date: '2026-05-28'
 ---
 The goal of this blog post is to serve as a jumping off point for a non-technical person to begin to build self-serve infrastructure.
 

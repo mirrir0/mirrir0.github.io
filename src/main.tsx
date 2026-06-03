@@ -1,9 +1,5 @@
 /**
  * main.tsx — Entry point for the Blog panel.
- *
- * Uses the @anomalous/sdk/panel API:
- *   <PanelApp> handles all bridge setup, handshake, and theme sync.
- *   The blog component uses PanelRouter for in-memory client-side routing.
  */
 
 import { createRoot } from "react-dom/client";

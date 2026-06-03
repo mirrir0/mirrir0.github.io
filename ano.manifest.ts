@@ -19,7 +19,7 @@ export default defineApp({
       tools: [
         "list_posts", "get_post", "list_tags", "get_posts_by_tag",
         "list_drafts", "get_draft", "save_draft", "create_draft",
-        "delete_draft", "publish_draft",
+        "delete_draft", "rename_draft", "publish_draft",
       ],
     },
   },

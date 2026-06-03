@@ -1,0 +1,6 @@
+{
+  "id": "blog",
+  "devBase": "/api/v1/apps/blog/dev/s",
+  "serveBase": "/api/v1/apps/blog/s",
+  "port": 2999
+}

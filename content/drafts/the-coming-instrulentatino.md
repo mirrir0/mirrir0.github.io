@@ -1,14 +1,14 @@
 ---
 title: The Coming Instrumentation
-date: '2026-01-31T02:37:25.067Z'
 description: A Vision for a more Personal Internet
 tags: []
+date: '2026-01-31T02:37:25.067Z'
 ---
 The alternate title for this is "How I stopped worrying, and started caring about why."
 
 I've cared about the computer game long enough to know that it is a dumb one. Not because I do not love computers. In fact, there's little that I've cared about in my whole life than more than computers beyond my loved ones and the future. But I do think that as an industry, we really need to recognize that there is a difference in kind between the things that we do
 
- do not think the current internet gets to exists easily in the future
+do not think the current internet gets to exists easily in the future
 
 this has to do with the ability for people to easily agree on collaborative protocols to re-transmit data between data sources
 
@@ -22,4 +22,4 @@ I think the future is personal. And I think that has to do with the distribution
 
 i think that we actually have a very relevant opportunity to be able to build systems of PERSONAL computing. the reason for the internet being developed wa that the *skills* of personal computing were not distributable. the entire reason for the free software movement had to do with the processing on inputs and outputs of software systems. because of the difficulty of replicating the inputs and outputs of arbitrary systems, we creates marktets for the products of the people skilled enough to understand the necessary configuration of language such that the people that constructedf the software determined that they ought to get outsized economic returns for it.
 
-most software that we sell is HumanWare, the rest is ComputeWare. 
+most software that we sell is HumanWare, the rest is ComputeWare.

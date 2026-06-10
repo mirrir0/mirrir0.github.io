@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { usePanelLocation } from "@anomalous/sdk/panel";
+import { useLocation } from "react-router";
 import { useEditorContext } from "../../app/components/editor/EditorContext";
 import { DraftMenu } from "../../app/components/DraftMenu";
 
@@ -43,7 +43,7 @@ function getDisplayInfo(pathname: string) {
 }
 
 export function VimStatusline() {
-  const { location } = usePanelLocation();
+  const location = useLocation();
   const [scrollInfo, setScrollInfo] = useState({ line: 1, col: 1, percent: 0 });
   const [headingTrail, setHeadingTrail] = useState<string[]>([]);
   const editorContext = useEditorContext();

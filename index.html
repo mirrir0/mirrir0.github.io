@@ -7,6 +7,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // GitHub Pages SPA deep-link restore: public/404.html stashes the
+      // requested path and bounces here; replay it into history before the
+      // app boots so createBrowserRouter starts on the right route.
+      (function () {
+        var redirect = sessionStorage.getItem("redirectPath");
+        if (redirect) {
+          sessionStorage.removeItem("redirectPath");
+          history.replaceState(null, "", redirect);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

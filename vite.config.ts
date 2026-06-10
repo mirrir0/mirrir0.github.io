@@ -7,8 +7,11 @@ import { contentBakePlugin } from "./content-bake.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ command }) => ({
-  base: command === "build" ? "./" : "/",
+export default defineConfig(() => ({
+  // Absolute base: served at the domain root (CNAME mirrir.net /
+  // mirrir0.github.io). Deep links like /blog/:slug must resolve assets from
+  // /assets, not relative to the current path.
+  base: "/",
   plugins: [
     tailwindcss(),
     react(),

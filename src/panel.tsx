@@ -8,17 +8,8 @@
  * and dead-code-eliminated from the production bundle.
  */
 
-import { useState, useEffect, lazy, Suspense } from "react";
-import {
-  useTheme,
-  useDevMode,
-  PanelRouter,
-  Routes,
-  Route,
-  Link,
-  usePanelLocation,
-} from "@anomalous/sdk/panel";
-import type { RouteComponentProps } from "@anomalous/sdk/panel";
+import { useState, useEffect, lazy, Suspense, type ReactNode } from "react";
+import { Link, Outlet, useParams, useNavigate, useLocation, type RouteObject } from "react-router";
 import { EditorProvider, useEditorContext } from "../app/components/editor/EditorContext";
 import { PDFViewerProvider } from "../app/components/pdf-viewer";
 import { VimStatusline } from "./components/VimStatusline";
@@ -69,9 +60,9 @@ function getPostsByTag(tag: string): Array<{ slug: string; title: string; date: 
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
-function BlogLayout({ children }: { children: React.ReactNode }) {
-  const isDev = useDevMode();
-  const { location } = usePanelLocation();
+function BlogLayout({ children }: { children: ReactNode }) {
+  const isDev = import.meta.env.DEV;
+  const location = useLocation();
   const isBlogPost = location.pathname.startsWith("/blog/") && location.pathname !== "/blog/";
   const isDraftEditor = location.pathname.startsWith("/draft/");
   const showStatusline = isBlogPost || isDraftEditor;
@@ -231,12 +222,13 @@ function BlogList() {
   );
 }
 
-function BlogPost({ params, navigate }: RouteComponentProps) {
-  const { slug } = params;
+function BlogPost() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
   const post = posts.find(p => p.slug === slug) ?? null;
   const [editMode, setEditMode] = useState(false);
   const confirm = useConfirm();
-  const isDev = useDevMode();
+  const isDev = import.meta.env.DEV;
   const editorContext = useEditorContext();
 
   // Lazy import callApi only in dev
@@ -248,13 +240,13 @@ function BlogPost({ params, navigate }: RouteComponentProps) {
   const handleUnpublish = async () => {
     if (!await confirm("Unpublish this post? It will be moved back to drafts.")) return;
     await doCallApi(`/api/posts/${slug}/unpublish`, { method: "POST" });
-    navigate.push(`/draft/${slug}`);
+    navigate(`/draft/${slug}`);
   };
 
   const handleDelete = async () => {
     if (!await confirm("Delete this post? This cannot be undone.")) return;
     await doCallApi(`/api/posts/${slug}`, { method: "DELETE" });
-    navigate.push("/blog");
+    navigate("/blog");
   };
 
   useEffect(() => {
@@ -353,9 +345,9 @@ function TagsPage() {
   );
 }
 
-function TagPosts({ params }: RouteComponentProps) {
-  const { tag } = params;
-  const metas = getPostsByTag(tag);
+function TagPosts() {
+  const { tag } = useParams();
+  const metas = getPostsByTag(tag ?? "");
 
   return (
     <div className="py-8 md:py-12">
@@ -379,29 +371,56 @@ function TagPosts({ params }: RouteComponentProps) {
   );
 }
 
-// ─── Main App ────────────────────────────────────────────────────────────────
+// ─── Routing ─────────────────────────────────────────────────────────────────
 
-export function App() {
+/**
+ * Layout route: providers + chrome wrap an <Outlet> for the matched page.
+ * The Suspense boundary covers lazily-loaded route elements (Dither, draft
+ * editor). Providers live inside the router so route components can consume
+ * editor/PDF context.
+ */
+function Layout() {
   return (
-    <PanelRouter initialPath="/">
-      <EditorProvider>
-        <PDFViewerProvider>
-          <BlogLayout>
-            <Suspense fallback={null}>
-            <Routes fallback={<div className="py-8 text-zinc-500">404 — not found</div>}>
-              <Route path="/" component={HomePage} />
-              <Route path="/about" component={AboutPage} />
-              <Route path="/blog" component={BlogList} />
-              <Route path="/blog/tags" component={TagsPage} />
-              <Route path="/blog/tags/:tag" component={TagPosts} />
-              <Route path="/blog/:slug" component={BlogPost} />
-              {DraftsPage && <Route path="/drafts" component={DraftsPage} />}
-              {DraftEditor && <Route path="/draft/:slug" component={DraftEditor} />}
-            </Routes>
-            </Suspense>
-          </BlogLayout>
-        </PDFViewerProvider>
-      </EditorProvider>
-    </PanelRouter>
+    <EditorProvider>
+      <PDFViewerProvider>
+        <BlogLayout>
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
+        </BlogLayout>
+      </PDFViewerProvider>
+    </EditorProvider>
   );
 }
+
+function NotFound() {
+  return <div className="py-8 text-zinc-500">404 — not found</div>;
+}
+
+// Dev-only draft routes are spread in only when DraftsPage/DraftEditor exist
+// (DEV builds). In production both are null and the lazy imports are
+// dead-code-eliminated, so the draft editor never enters the bundle.
+const draftRoutes: RouteObject[] =
+  DraftsPage && DraftEditor
+    ? [
+        { path: "drafts", element: <DraftsPage /> },
+        { path: "draft/:slug", element: <DraftEditor /> },
+      ]
+    : [];
+
+export const routes: RouteObject[] = [
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: "about", element: <AboutPage /> },
+      { path: "blog", element: <BlogList /> },
+      { path: "blog/tags", element: <TagsPage /> },
+      { path: "blog/tags/:tag", element: <TagPosts /> },
+      { path: "blog/:slug", element: <BlogPost /> },
+      ...draftRoutes,
+      { path: "*", element: <NotFound /> },
+    ],
+  },
+];

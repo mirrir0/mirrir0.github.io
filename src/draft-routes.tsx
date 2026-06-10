@@ -11,8 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, lazy, Suspense, useMemo, useRef } from "react";
-import { Routes, Route, Link, usePanelLocation } from "@anomalous/sdk/panel";
-import type { RouteComponentProps } from "@anomalous/sdk/panel";
+import { Link, useParams, useNavigate } from "react-router";
 import { useEditorContext } from "../app/components/editor/EditorContext";
 import { DraftMenu } from "../app/components/DraftMenu";
 import { useConfirm } from "./components/useConfirm";
@@ -88,7 +87,8 @@ function DraftRow({ draft, onRefresh }: { draft: PostMeta; onRefresh: () => void
 
 // ─── DraftsPage ──────────────────────────────────────────────────────────────
 
-export function DraftsPage({ navigate }: RouteComponentProps) {
+export function DraftsPage() {
+  const navigate = useNavigate();
   const [drafts, setDrafts] = useState<PostMeta[] | null>(null);
   const [title, setTitle] = useState("");
   const [refresh, setRefresh] = useState(0);
@@ -103,7 +103,7 @@ export function DraftsPage({ navigate }: RouteComponentProps) {
       const r = await callApi("/api/drafts", { method: "PUT", body: { title: title.trim() } });
       setTitle("");
       setRefresh((x) => x + 1);
-      navigate.push(`/draft/${(r as { slug: string }).slug}`);
+      navigate(`/draft/${(r as { slug: string }).slug}`);
     } catch { }
   };
 
@@ -154,8 +154,9 @@ export function DraftsPage({ navigate }: RouteComponentProps) {
 
 // ─── DraftEditor ─────────────────────────────────────────────────────────────
 
-export function DraftEditor({ params, navigate }: RouteComponentProps) {
-  const { slug: initialSlug } = params;
+export function DraftEditor() {
+  const { slug: initialSlug = "" } = useParams();
+  const navigate = useNavigate();
   const editorContext = useEditorContext();
   const confirm = useConfirm();
 
@@ -236,7 +237,7 @@ export function DraftEditor({ params, navigate }: RouteComponentProps) {
     try {
       if (s !== initialSlug) {
         await callApi(`/api/drafts/${initialSlug}/rename`, { method: "POST", body: { newSlug: s } });
-        navigate.replace(`/draft/${s}`);
+        navigate(`/draft/${s}`, { replace: true });
       }
 
       await callApi(`/api/drafts/${s}`, {
@@ -272,7 +273,7 @@ export function DraftEditor({ params, navigate }: RouteComponentProps) {
     try {
       if (isDirty) await handleSave();
       await callApi(`/api/drafts/${contentRef.current.slug}/publish`, { method: "POST" });
-      navigate.push(`/blog/${contentRef.current.slug}`);
+      navigate(`/blog/${contentRef.current.slug}`);
     } catch (err) {
       setIsPublishing(false);
       throw err;
@@ -282,7 +283,7 @@ export function DraftEditor({ params, navigate }: RouteComponentProps) {
   const handleDelete = useCallback(async () => {
     if (!await confirm("Delete this draft? This cannot be undone.")) return;
     await callApi(`/api/drafts/${contentRef.current.slug}`, { method: "DELETE" });
-    navigate.push("/drafts");
+    navigate("/drafts");
   }, [navigate, confirm]);
 
   useEffect(() => {

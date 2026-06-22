@@ -2,7 +2,7 @@
  * api-helpers.ts — API fetch utility for the blog panel.
  *
  * API calls always route through __ANO__.serveBase so they hit the
- * backend server process (server.mjs). The dev proxy is only used
+ * backend server process (server.http.ts). The dev proxy is only used
  * for static assets and HTML — not for API endpoints.
  */
 const ANO = (window as any).__ANO__ || {};

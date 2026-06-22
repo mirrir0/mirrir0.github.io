@@ -26,6 +26,65 @@ type PageProps = {
 // Store scroll positions per file (persists across opens)
 const scrollPositions = new Map<string, number>();
 
+type PDFComponents = {
+  Document: React.ComponentType<DocumentProps>;
+  Page: React.ComponentType<PageProps>;
+};
+
+// Separate component so TypeScript can narrow pdfComponents to non-null and use
+// Document/Page directly as JSX elements without an undefined in the union.
+function PDFContent({
+  pdfComponents,
+  pdfUrl,
+  onLoadSuccess,
+  totalPages,
+  containerWidth,
+  textRenderer,
+  setPageRef,
+}: {
+  pdfComponents: PDFComponents;
+  pdfUrl: string;
+  onLoadSuccess: (data: { numPages: number }) => void;
+  totalPages: number;
+  containerWidth: number;
+  textRenderer: (textItem: { str: string }) => string;
+  setPageRef: (pageNum: number, el: HTMLDivElement | null) => void;
+}) {
+  const { Document, Page } = pdfComponents;
+  return (
+    <Document
+      file={pdfUrl}
+      onLoadSuccess={onLoadSuccess}
+      loading={
+        <div className="flex items-center justify-center h-64 text-zinc-500 font-mono text-sm">
+          Loading PDF...
+        </div>
+      }
+      error={
+        <div className="flex items-center justify-center h-64 text-red-400 font-mono text-sm">
+          Failed to load PDF
+        </div>
+      }
+      className="flex flex-col items-center gap-4"
+    >
+      {Array.from({ length: totalPages }, (_, index) => (
+        <div
+          key={index + 1}
+          ref={(el) => setPageRef(index + 1, el)}
+          className="shrink-0"
+        >
+          <Page
+            pageNumber={index + 1}
+            width={containerWidth}
+            customTextRenderer={textRenderer}
+            className="shadow-lg"
+          />
+        </div>
+      ))}
+    </Document>
+  );
+}
+
 export function PDFViewerPanel() {
   const {
     isOpen,
@@ -42,10 +101,7 @@ export function PDFViewerPanel() {
 
   const [containerWidth, setContainerWidth] = useState(500);
   const [currentVisiblePage, setCurrentVisiblePage] = useState(1);
-  const [pdfComponents, setPdfComponents] = useState<{
-    Document: React.ComponentType<DocumentProps>;
-    Page: React.ComponentType<PageProps>;
-  } | null>(null);
+  const [pdfComponents, setPdfComponents] = useState<PDFComponents | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -228,7 +284,6 @@ export function PDFViewerPanel() {
   if (!isOpen || !file) return null;
 
   const pdfUrl = `/pdfs/${file}`;
-  const { Document, Page } = pdfComponents || {};
 
   return (
     <>
@@ -265,36 +320,15 @@ export function PDFViewerPanel() {
               Loading PDF viewer...
             </div>
           ) : (
-            <Document
-              file={pdfUrl}
+            <PDFContent
+              pdfComponents={pdfComponents}
+              pdfUrl={pdfUrl}
               onLoadSuccess={onDocumentLoadSuccess}
-              loading={
-                <div className="flex items-center justify-center h-64 text-zinc-500 font-mono text-sm">
-                  Loading PDF...
-                </div>
-              }
-              error={
-                <div className="flex items-center justify-center h-64 text-red-400 font-mono text-sm">
-                  Failed to load PDF
-                </div>
-              }
-              className="flex flex-col items-center gap-4"
-            >
-              {Array.from({ length: totalPages }, (_, index) => (
-                <div
-                  key={index + 1}
-                  ref={(el) => setPageRef(index + 1, el)}
-                  className="shrink-0"
-                >
-                  <Page
-                    pageNumber={index + 1}
-                    width={containerWidth}
-                    customTextRenderer={textRenderer}
-                    className="shadow-lg"
-                  />
-                </div>
-              ))}
-            </Document>
+              totalPages={totalPages}
+              containerWidth={containerWidth}
+              textRenderer={textRenderer}
+              setPageRef={setPageRef}
+            />
           )}
         </div>
       </div>

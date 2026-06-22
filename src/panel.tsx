@@ -1,11 +1,14 @@
 /**
  * panel.tsx — Blog panel.
  *
- * Multi-view blog app using the SDK's in-memory PanelRouter.
- * Content is baked at build time (content-data.ts) — no runtime API calls.
+ * Multi-view blog app. Content is baked at build time (content-data.ts) — no
+ * runtime API calls for published posts.
  *
- * Dev-only routes (/drafts, /draft/:slug) are gated by import.meta.env.DEV
- * and dead-code-eliminated from the production bundle.
+ * The draft editor (/drafts, /draft/:slug) is gated by __BLOG_EDITOR__, a
+ * build-time define that is true wherever a backend exists (dev server, ano
+ * build, MCP build) and false for the public GitHub Pages build — so the editor
+ * + tiptap chunk are dead-code-eliminated from the public bundle. __BLOG_MCP__
+ * additionally strips the heavy Dither (three.js) from the single-file MCP build.
  */
 
 import { useState, useEffect, lazy, Suspense, type ReactNode } from "react";
@@ -15,15 +18,18 @@ import { PDFViewerProvider } from "../app/components/pdf-viewer";
 import { VimStatusline } from "./components/VimStatusline";
 import { useConfirm } from "./components/useConfirm";
 import { bakedPosts, type BakedPost } from "./content-data";
+import { blogClient } from "./blog-client";
 import { FaPersonThroughWindow } from "react-icons/fa6";
 
-const Dither = lazy(() => import("../app/components/Dither"));
+// Homepage background animation — excluded from the MCP single-file build.
+const Dither = __BLOG_MCP__ ? null : lazy(() => import("../app/components/Dither"));
 
-// Dev-only draft routes. Dynamic import tree-shaken in production.
-const DraftsPage = import.meta.env.DEV
+// Draft editor routes. The import() is unreachable (DCE'd) when __BLOG_EDITOR__
+// is statically false (GitHub Pages), keeping tiptap out of the public bundle.
+const DraftsPage = __BLOG_EDITOR__
   ? lazy(() => import("./draft-routes").then(m => ({ default: m.DraftsPage })))
   : null;
-const DraftEditor = import.meta.env.DEV
+const DraftEditor = __BLOG_EDITOR__
   ? lazy(() => import("./draft-routes").then(m => ({ default: m.DraftEditor })))
   : null;
 
@@ -61,7 +67,7 @@ function getPostsByTag(tag: string): Array<{ slug: string; title: string; date: 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
 function BlogLayout({ children }: { children: ReactNode }) {
-  const isDev = import.meta.env.DEV;
+  const editorEnabled = __BLOG_EDITOR__;
   const location = useLocation();
   const isBlogPost = location.pathname.startsWith("/blog/") && location.pathname !== "/blog/";
   const isDraftEditor = location.pathname.startsWith("/draft/");
@@ -83,7 +89,7 @@ function BlogLayout({ children }: { children: ReactNode }) {
               <Link to="/" className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm no-underline">home</Link>
               <Link to="/about" className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm no-underline">about</Link>
               <Link to="/blog" className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm no-underline">blog</Link>
-              {isDev && <Link to="/drafts" className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm no-underline">drafts</Link>}
+              {editorEnabled && <Link to="/drafts" className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm no-underline">drafts</Link>}
             </div>
           </nav>
           {showStatusline && (
@@ -140,7 +146,7 @@ function HomePage() {
         <p className="text-zinc-400">Staring into the wired, and the wired is looking back very confused.</p>
       </div>
       <div className="mx-auto w-[95%] h-[500px] rounded-xl overflow-hidden border-[4px] border-emerald-500 bg-zinc-900">
-        {showDither ? (
+        {Dither && showDither ? (
           <Suspense fallback={<div className="w-full h-[500px] bg-zinc-900" />}>
             <div className="w-full h-[500px] relative">
               <Dither waveColor={[0.2, 0.7, 0.4]} mouseRadius={0} colorNum={2.5} waveAmplitude={0.45} waveFrequency={5.1} />
@@ -228,24 +234,18 @@ function BlogPost() {
   const post = posts.find(p => p.slug === slug) ?? null;
   const [editMode, setEditMode] = useState(false);
   const confirm = useConfirm();
-  const isDev = import.meta.env.DEV;
+  const editorEnabled = __BLOG_EDITOR__;
   const editorContext = useEditorContext();
-
-  // Lazy import callApi only in dev
-  const doCallApi = async (path: string, opts?: { method?: string; body?: unknown }) => {
-    const { callApi } = await import("./api-helpers");
-    return callApi(path, opts);
-  };
 
   const handleUnpublish = async () => {
     if (!await confirm("Unpublish this post? It will be moved back to drafts.")) return;
-    await doCallApi(`/api/posts/${slug}/unpublish`, { method: "POST" });
+    if (slug) await blogClient.unpublishPost(slug);
     navigate(`/draft/${slug}`);
   };
 
   const handleDelete = async () => {
     if (!await confirm("Delete this post? This cannot be undone.")) return;
-    await doCallApi(`/api/posts/${slug}`, { method: "DELETE" });
+    if (slug) await blogClient.deletePost(slug);
     navigate("/blog");
   };
 
@@ -280,7 +280,7 @@ function BlogPost() {
               <time className="text-zinc-600 font-mono text-sm">{formatDate(post.date)}</time>
               <h1 className="text-2xl md:text-3xl font-mono text-zinc-100 mt-2">{post.title}</h1>
             </div>
-            {isDev && (
+            {editorEnabled && (
               <button
                 onClick={() => setEditMode((v) => !v)}
                 className={`shrink-0 px-2 py-1 font-mono text-xs rounded transition-colors ${

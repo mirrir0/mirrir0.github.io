@@ -1,8 +1,9 @@
 ---
 title: "Jailbreaking the Meta Portal Plus 2026"
 description: "now you're thinking with portals"
-date: "2026-06-05T06:58:27.061Z"
+date: "2026-06-07"
 ---
+
 
 I have this crazy idea and I really, really want to try it. Basically Meta recently allowed for ADB to be used for the Meta Portal series, which they discontinued in 2024 or so. It's been end of life for like two years.
 

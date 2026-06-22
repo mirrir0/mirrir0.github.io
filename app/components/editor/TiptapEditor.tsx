@@ -1,22 +1,26 @@
 import { useEditor, EditorContent } from "@tiptap/react";
+import type { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
-import { Markdown } from "tiptap-markdown";
+import { Markdown } from "@tiptap/markdown";
 import EditorToolbar from "./EditorToolbar";
 import { useEffect, useState } from "react";
 import { lowlight } from "~/lib/lowlight";
 import { PDFLinkNode } from "./pdf-node";
 import { SlashCommands } from "./slash-commands";
+import { SuggestionMark } from "./suggestions/suggestion-mark";
 import { DocumentPicker } from "./document-picker";
 
 interface TiptapEditorProps {
   content: string; // markdown content
   onChange: (content: string) => void;
+  // Surfaces the editor instance so the route can drive it (agent edits,
+  // accept/reject). Called with the instance on ready and null on teardown.
+  onEditor?: (editor: Editor | null) => void;
 }
 
-export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onEditor }: TiptapEditorProps) {
   const [isDocPickerOpen, setIsDocPickerOpen] = useState(false);
   const [docPickerTab, setDocPickerTab] = useState<'search' | 'upload'>('search');
 
@@ -24,6 +28,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     extensions: [
       StarterKit.configure({
         codeBlock: false, // Disable default code block, use CodeBlockLowlight instead
+        link: { openOnClick: false }, // v3: Link is bundled in StarterKit
       }),
       CodeBlockLowlight.configure({
         lowlight,
@@ -31,18 +36,22 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           class: "hljs",
         },
       }),
-      Link.configure({ openOnClick: false }),
       Image,
       PDFLinkNode,
       SlashCommands,
+      SuggestionMark,
       Markdown,
     ],
-    content, // Will be parsed as markdown by tiptap-markdown
+    content, // Parsed as markdown (see contentType below)
+    contentType: "markdown", // v3 @tiptap/markdown: treat `content` as markdown
     immediatelyRender: false, // Fix SSR hydration warning
+    // v3 disables per-transaction rerenders by default; EditorToolbar reads
+    // editor.isActive()/can() during render, so opt back in to keep it live.
+    shouldRerenderOnTransaction: true,
     onUpdate: ({ editor }) => {
-      // Export markdown via editor.storage.markdown.getMarkdown()
-      const markdown = editor.storage.markdown.getMarkdown();
-      onChange(markdown);
+      // v3 native markdown: Editor.getMarkdown() replaces the old
+      // editor.storage.markdown.getMarkdown() from tiptap-markdown.
+      onChange(editor.getMarkdown());
     },
   });
 
@@ -56,12 +65,20 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     return () => window.removeEventListener('editor:open-document-picker', handler as EventListener);
   }, []);
 
-  // Update editor content when prop changes externally
+  // Update editor content when prop changes externally (e.g. agent push, SSE).
+  // emitUpdate:false prevents this programmatic set from echoing back through
+  // onUpdate -> onChange -> autosave. v3 setContent emits updates by default.
   useEffect(() => {
-    if (editor && content !== editor.storage.markdown.getMarkdown()) {
-      editor.commands.setContent(content);
+    if (editor && content !== editor.getMarkdown()) {
+      editor.commands.setContent(content, { contentType: "markdown", emitUpdate: false });
     }
   }, [content, editor]);
+
+  // Surface the editor instance to the route (for agent edits + accept/reject).
+  useEffect(() => {
+    onEditor?.(editor ?? null);
+    return () => onEditor?.(null);
+  }, [editor, onEditor]);
 
   return (
     <div className="flex flex-col">

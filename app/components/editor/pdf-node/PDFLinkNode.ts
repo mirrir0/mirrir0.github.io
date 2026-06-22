@@ -108,6 +108,27 @@ export const PDFLinkNode = Node.create<PDFLinkOptions>({
     ];
   },
 
+  // v3 native @tiptap/markdown drops any node without a renderMarkdown handler
+  // (MarkdownManager returns '' for unknown node types). PDF links are a custom
+  // atom node with no Markdown syntax, so serialize them as the same HTML span
+  // we emit in renderHTML — `marked` passes inline HTML through to the baked
+  // post, and on load native Markdown re-parses it via parseHTML above. Without
+  // this, editing+saving a draft containing a PDF link would silently lose it.
+  renderMarkdown: (node: { attrs?: Record<string, unknown> }): string => {
+    const a = (node.attrs ?? {}) as Partial<PDFLinkAttributes>;
+    if (!a.file) return "";
+    const esc = (v: unknown) =>
+      String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const attrs = [
+      `data-pdf-link=""`,
+      `data-file="${esc(a.file)}"`,
+      `data-page="${a.page ?? 1}"`,
+      a.highlight ? `data-highlight="${esc(a.highlight)}"` : "",
+      a.label ? `data-label="${esc(a.label)}"` : "",
+    ].filter(Boolean).join(" ");
+    return `<span ${attrs}></span>`;
+  },
+
   addCommands() {
     return {
       setPDFLink:

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog</title>
+  </head>
+  <body>
+    <!--
+      MCP App entry. Deliberately omits the GitHub Pages SPA-redirect script
+      (index.html) — it touches sessionStorage, which can throw in a sandboxed
+      iframe. The app uses createMemoryRouter in MCP mode, so no redirect is
+      needed. main.tsx detects the MCP context (__BLOG_MCP__) and boots the
+      ext-apps App client.
+    -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

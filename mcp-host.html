@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog · ext-apps host harness</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #18181b; color: #e4e4e7; display: flex; height: 100vh; }
+      #sidebar { width: 280px; flex-shrink: 0; border-right: 1px solid #27272a; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+      #sidebar h1 { font-size: 13px; color: #34d399; margin: 0 0 8px; letter-spacing: 0.04em; text-transform: uppercase; }
+      button { background: #27272a; color: #e4e4e7; border: 1px solid #3f3f46; border-radius: 5px; padding: 8px 10px; font: inherit; font-size: 12px; cursor: pointer; text-align: left; }
+      button:hover { border-color: #34d399; }
+      #log { margin-top: auto; font-size: 10px; color: #71717a; white-space: pre-wrap; max-height: 40vh; overflow: auto; line-height: 1.5; }
+      #stage { flex: 1; display: flex; align-items: stretch; }
+      iframe { width: 100%; height: 100%; border: 0; background: #09090b; }
+    </style>
+  </head>
+  <body>
+    <div id="sidebar">
+      <h1>agent (ext-apps host)</h1>
+      <button id="btn-create">1 · Create draft</button>
+      <button id="btn-write">2 · Write content</button>
+      <button id="btn-replace">3 · Propose word edit</button>
+      <button id="btn-append">4 · Propose new paragraph</button>
+      <button id="btn-list">List drafts</button>
+      <button id="btn-publish">Publish</button>
+      <div id="log"></div>
+    </div>
+    <div id="stage">
+      <iframe id="panel" src="/panel"></iframe>
+    </div>
+    <script type="module" src="/src/mcp-host.ts"></script>
+  </body>
+</html>

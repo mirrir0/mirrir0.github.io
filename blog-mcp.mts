@@ -3,6 +3,9 @@
  * McpServer. Shared by both transports (server.ts = stdio for Claude Desktop,
  * server.http.ts = HTTP for the ext-apps basic-host), so the tool surface and
  * UI-intent envelopes are defined exactly once.
+ *
+ * Every tool's structuredContent now includes a `tool` discriminator field so
+ * the compact MCP app views (src/mcp-app.tsx) know which card to render.
  */
 import {
   registerAppTool,
@@ -17,10 +20,8 @@ import type { Draft, DraftStore } from "./draft-store.mjs";
 export const RESOURCE_URI = "ui://blog/app.html";
 
 // ── UI intent envelope ───────────────────────────────────────────────
-// Returned as structuredContent from every tool. The panel maps view ->
-// router navigation; a `draft` payload is pushed into the open editor. The
-// nonce lets the editor mark an external push as already-saved so autosave
-// does not echo it back.
+// Returned as structuredContent from every tool. The MCP app router
+// dispatches on `tool`; the full blog SPA uses `view`/`draft`/`edit`.
 let intentSeq = 0;
 // Mirrors the BlogEdit union in app/components/editor/suggestions/apply-edit.ts.
 // Duplicated deliberately to keep the Node server free of any editor/tiptap
@@ -32,20 +33,29 @@ type BlogEdit =
   | { op: "append"; text: string };
 type BlogIntent = {
   v: 1;
+  /** MCP tool name — the MCP app router uses this to pick the right view card. */
+  tool: string;
   view: "drafts" | "draft" | "post" | "blog";
   slug?: string;
   draft?: Draft | null;
   edit?: BlogEdit | null;
   nonce: number;
 };
-function intent(view: BlogIntent["view"], extra: Omit<Partial<BlogIntent>, "v" | "view" | "nonce"> = {}): BlogIntent {
-  return { v: 1, view, nonce: ++intentSeq, ...extra };
+function intent(tool: string, view: BlogIntent["view"], extra: Omit<Partial<BlogIntent>, "v" | "tool" | "view" | "nonce"> = {}): BlogIntent {
+  return { v: 1, tool, view, nonce: ++intentSeq, ...extra };
 }
 
-function result(payload: unknown, structured: BlogIntent) {
+function result(tool: string, payload: unknown, structured: BlogIntent) {
+  // Unpack payload into structuredContent so compact MCP views (mcp-app.tsx)
+  // can read data directly. Arrays → `drafts`; objects → spread; primitives →
+  // `value`. Intent fields override same-named payload fields; `tool` always wins.
+  const extra: Record<string, unknown> =
+    Array.isArray(payload) ? { drafts: payload }
+    : (payload != null && typeof payload === "object" ? payload as Record<string, unknown>
+    : { value: payload });
   return {
     content: [{ type: "text" as const, text: JSON.stringify(payload) }],
-    structuredContent: structured as unknown as Record<string, unknown>,
+    structuredContent: { ...extra, ...structured, tool } as unknown as Record<string, unknown>,
   };
 }
 
@@ -68,11 +78,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     server,
     "blog-app",
     RESOURCE_URI,
-    {
-      mimeType: RESOURCE_MIME_TYPE,
-      // No external origins: fonts inline and callServerTool is postMessage.
-      _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] } } },
-    },
+    { mimeType: RESOURCE_MIME_TYPE },
     async () => ({
       contents: [{ uri: RESOURCE_URI, mimeType: RESOURCE_MIME_TYPE, text: readFileSync(resourceHtmlPath, "utf-8") }],
     }),
@@ -82,7 +88,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     server,
     "list_drafts",
     { title: "List drafts", description: "List all draft posts.", inputSchema: {}, _meta: ui },
-    async () => result(store.listDrafts(), intent("drafts")),
+    async () => result("list_drafts", store.listDrafts(), intent("list_drafts", "drafts")),
   );
 
   registerAppTool(
@@ -92,7 +98,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     async ({ slug }) => {
       const draft = store.readDraft(slug);
       if (!draft) return errorResult("draft not found");
-      return result(draft, intent("draft", { slug, draft }));
+      return result("get_draft", draft, intent("get_draft", "draft", { slug, draft }));
     },
   );
 
@@ -103,7 +109,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     async ({ title }) => {
       const { slug } = store.createDraft({ title });
       const draft = store.readDraft(slug);
-      return result({ slug }, intent("draft", { slug, draft }));
+      return result("create_draft", { slug, title, date: draft!.date }, intent("create_draft", "draft", { slug, draft }));
     },
   );
 
@@ -126,18 +132,13 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     async ({ slug, ...fields }) => {
       store.writeDraft(slug, fields);
       const draft = store.readDraft(slug);
-      return result(draft, intent("draft", { slug, draft }));
+      return result("update_draft", draft, intent("update_draft", "draft", { slug, draft }));
     },
   );
 
   // ── Surgical edit tools ───────────────────────────────────────────────
-  // Unlike update_draft (a full-content write), these propose a *reviewable*
-  // change: the tool returns an `edit` intent and does NOT touch the file. The
-  // panel applies it as a pending suggestion the human accepts/rejects; the file
-  // is persisted by the editor's autosave only once the review is resolved. The
-  // server validates the anchor text against the current draft for fast feedback.
-  const editResult = (slug: string, edit: BlogEdit) =>
-    result({ ok: true, edit }, intent("draft", { slug, edit }));
+  const editResult = (tool: string, slug: string, edit: BlogEdit) =>
+    result(tool, { ok: true, edit }, intent(tool, "draft", { slug, edit }));
 
   const requireText = (slug: string, needle: string): string | null => {
     const draft = store.readDraft(slug);
@@ -152,14 +153,14 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     {
       title: "Replace text",
       description:
-        "Propose replacing an exact run of text in the draft with new text. Shows a word-level suggestion (old struck through, new highlighted) for the human to accept or reject. `find` must be an exact, unique phrase within a single paragraph.",
+        "Propose replacing an exact run of text in the draft with new text. Shows a word-level suggestion (old struck through, new highlighted) for the human to accept or reject.",
       inputSchema: { slug: z.string(), find: z.string(), replace: z.string() },
       _meta: ui,
     },
     async ({ slug, find, replace }) => {
       const err = requireText(slug, find);
       if (err) return errorResult(err);
-      return editResult(slug, { op: "replace", find, replace });
+      return editResult("replace_text", slug, { op: "replace", find, replace });
     },
   );
 
@@ -168,15 +169,14 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     "delete_text",
     {
       title: "Delete text",
-      description:
-        "Propose deleting an exact run of text from the draft. Shows the text struck through for the human to accept or reject. `find` must be an exact phrase within a single paragraph.",
+      description: "Propose deleting an exact run of text from the draft. Shows the text struck through for the human to accept or reject.",
       inputSchema: { slug: z.string(), find: z.string() },
       _meta: ui,
     },
     async ({ slug, find }) => {
       const err = requireText(slug, find);
       if (err) return errorResult(err);
-      return editResult(slug, { op: "delete", find });
+      return editResult("delete_text", slug, { op: "delete", find });
     },
   );
 
@@ -185,8 +185,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     "insert_text",
     {
       title: "Insert text",
-      description:
-        "Propose inserting new inline text. With `after`, it is inserted right after that exact anchor phrase; without `after`, at the end of the document. Shown highlighted for accept/reject.",
+      description: "Propose inserting new inline text. Shown highlighted for accept/reject.",
       inputSchema: { slug: z.string(), text: z.string(), after: z.string().optional() },
       _meta: ui,
     },
@@ -195,7 +194,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
         const err = requireText(slug, after);
         if (err) return errorResult(err);
       }
-      return editResult(slug, { op: "insert", text, after });
+      return editResult("insert_text", slug, { op: "insert", text, after });
     },
   );
 
@@ -208,7 +207,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
       inputSchema: { slug: z.string(), text: z.string() },
       _meta: ui,
     },
-    async ({ slug, text }) => editResult(slug, { op: "append", text }),
+    async ({ slug, text }) => editResult("append_text", slug, { op: "append", text }),
   );
 
   registerAppTool(
@@ -222,7 +221,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
         return errorResult((e as Error).message);
       }
       const draft = store.readDraft(newSlug);
-      return result({ ok: true, slug: newSlug }, intent("draft", { slug: newSlug, draft }));
+      return result("rename_draft", { ok: true, slug: newSlug }, intent("rename_draft", "draft", { slug: newSlug, draft }));
     },
   );
 
@@ -236,7 +235,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
       } catch (e) {
         return errorResult((e as Error).message);
       }
-      return result({ ok: true, slug }, intent("post", { slug }));
+      return result("publish_draft", { ok: true, slug }, intent("publish_draft", "post", { slug }));
     },
   );
 
@@ -251,7 +250,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
         return errorResult((e as Error).message);
       }
       const draft = store.readDraft(slug);
-      return result({ ok: true, slug }, intent("draft", { slug, draft }));
+      return result("unpublish_post", { ok: true, slug, title: draft?.title }, intent("unpublish_post", "draft", { slug, draft }));
     },
   );
 
@@ -261,7 +260,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     { title: "Delete draft", description: "Delete a draft and return to the drafts list.", inputSchema: { slug: z.string() }, _meta: ui },
     async ({ slug }) => {
       store.deleteDraft(slug);
-      return result({ ok: true }, intent("drafts"));
+      return result("delete_draft", { ok: true, slug }, intent("delete_draft", "drafts"));
     },
   );
 
@@ -271,7 +270,7 @@ export function registerBlog(server: McpServer, store: DraftStore, resourceHtmlP
     { title: "Delete post", description: "Delete a published post and return to the blog index.", inputSchema: { slug: z.string() }, _meta: ui },
     async ({ slug }) => {
       store.deletePost(slug);
-      return result({ ok: true }, intent("blog"));
+      return result("delete_post", { ok: true, slug }, intent("delete_post", "blog"));
     },
   );
 }

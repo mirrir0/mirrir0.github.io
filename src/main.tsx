@@ -25,7 +25,46 @@ if (!root) throw new Error("No #root element found");
 
 const isAno = "__ANO__" in window;
 const isMcp = __BLOG_MCP__ && window.parent !== window;
-const router = isAno || isMcp ? createMemoryRouter(routes) : createBrowserRouter(routes);
+
+// In ano/mcp mode, check for a draft query param set by the MCP app when
+// a user clicks a draft in the interactive list. Navigate directly to the
+// full Tiptap editor instead of the homepage.
+const searchParams = new URLSearchParams(window.location.search);
+const draftFromParam = searchParams.get("draft");
+const initialEntry = draftFromParam ? `/draft/${draftFromParam}` : "/";
+
+const router = isAno || isMcp
+  ? createMemoryRouter(routes, { initialEntries: [initialEntry] })
+  : createBrowserRouter(routes);
+
+// ── Anomalous host integration ──────────────────────────────────────
+// In the proxy-served iframe, sync internal navigation state to the
+// host so it survives page refreshes. Skip the initial synchronous
+// router.subscribe callback to avoid overwriting a stored path with
+// "/" before the host has a chance to restore.
+if (isAno) {
+  let didInitialSync = false;
+  const _unsub = router.subscribe((state) => {
+    if (!didInitialSync) {
+      didInitialSync = true;
+      // Signal readiness: the host will respond with host-navigate
+      // if there is a stored path to restore.
+      window.parent.postMessage({ kind: "panel-ready" }, "*");
+      return;
+    }
+    const url = state.location.pathname + state.location.search;
+    window.parent.postMessage({ kind: "external-location", url }, "*");
+  });
+  void _unsub; // retained for potential cleanup; lives for window lifetime
+
+  window.addEventListener("message", (event) => {
+    // Only accept messages from the same origin (proxy-served iframe).
+    if (event.origin !== window.location.origin) return;
+    if (event.data?.kind === "host-navigate" && typeof event.data.url === "string") {
+      router.navigate(event.data.url);
+    }
+  });
+}
 
 createRoot(root).render(<RouterProvider router={router} />);
 

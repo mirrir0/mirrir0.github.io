@@ -190,6 +190,10 @@ const httpServer = createServer(async (req, res) => {
 
   if (await handleApi(req, res, url, method)) return;
 
+  // MCP App resource: the Anomalous host resolves ui://blog/app.html to
+  // /api/v1/apps/blog/s/app.html — serve the single-file MCP build.
+  if (url.pathname === "/app.html") return serveHtml(res, RESOURCE);
+
   // ── Static files from dist/ (panel SPA: index.html, assets, fonts) ──
   let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
   filePath = filePath.split("?")[0];

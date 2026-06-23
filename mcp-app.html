@@ -3,17 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark">
     <title>Blog</title>
+    <style>
+      /*
+       * Critical layout reset — must be in the HTML source so the browser applies
+       * it BEFORE the first paint. Without overflow: hidden, the MCP SDK's auto-
+       * resize can enter a scrollbar feedback loop that destabilizes the iframe
+       * height measurement, causing the view to collapse to 0px.
+       */
+      html, body { margin: 0; overflow: hidden; }
+      #root { display: block; }
+    </style>
   </head>
   <body>
     <!--
-      MCP App entry. Deliberately omits the GitHub Pages SPA-redirect script
-      (index.html) — it touches sessionStorage, which can throw in a sandboxed
-      iframe. The app uses createMemoryRouter in MCP mode, so no redirect is
-      needed. main.tsx detects the MCP context (__BLOG_MCP__) and boots the
-      ext-apps App client.
+      MCP App entry. Loads the compact, tool-specific MCP views (src/mcp-app.tsx)
+      — NOT the full blog SPA. Each tool renders a focused card with only the
+      data relevant to that tool. Deliberately omits the GitHub Pages
+      SPA-redirect script (index.html) — it touches sessionStorage, which can
+      throw in a sandboxed iframe. Uses the @modelcontextprotocol/ext-apps
+      useApp hook for lifecycle + host communication.
     -->
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/mcp-app.tsx"></script>
   </body>
 </html>

@@ -1,13 +1,13 @@
 ---
-title: Enforcing Better Greps for my Pi Agent
-description: ''
-tags:
-  - harness-a-day
-date: '2026-06-02T21:19:54.830Z'
+title: "Enforcing Better Greps for my Pi Agent"
+description: ""
+date: "2026-06-02T21:19:54.830Z"
+tags: [harness-a-day]
 ---
+
 I've been recently running into an issue with the ways that deepseek-v4 handles grep commands.
 
- This has been a consistent issue, and it's something that, though not intense, has wasted both time and context for my agents. 
+This has been a consistent issue, and it's something that, though not intense, has wasted both time and context for my agents. 
 
 So I set out to solve it. 
 

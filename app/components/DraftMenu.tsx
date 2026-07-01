@@ -77,8 +77,8 @@ export function DraftMenu({
         disabled={disabled}
         className={
           isStatusline
-            ? "bg-zinc-700 text-zinc-300 px-2 h-full hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-            : "p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            ? "bg-muted text-card-foreground px-2 h-full hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+            : "p-1.5 text-muted-foreground hover:text-card-foreground hover:bg-secondary rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         }
         aria-label="Draft actions"
       >
@@ -87,17 +87,17 @@ export function DraftMenu({
 
       {isOpen && (
         <div
-          className="absolute z-50 bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 min-w-[120px] top-full right-0 mt-1"
+          className="absolute z-50 bg-secondary border border-border rounded shadow-lg py-1 min-w-[120px] top-full right-0 mt-1"
         >
           <button
             onClick={handlePublish}
-            className="w-full text-left px-3 py-1.5 text-sm font-mono text-zinc-300 hover:bg-zinc-700 hover:text-emerald-400 transition-colors"
+            className="w-full text-left px-3 py-1.5 text-sm font-mono text-card-foreground hover:bg-muted hover:text-emerald-400 transition-colors"
           >
             {publishLabel}
           </button>
           <button
             onClick={handleDelete}
-            className="w-full text-left px-3 py-1.5 text-sm font-mono text-zinc-300 hover:bg-zinc-700 hover:text-red-400 transition-colors"
+            className="w-full text-left px-3 py-1.5 text-sm font-mono text-card-foreground hover:bg-muted hover:text-red-400 transition-colors"
           >
             Delete
           </button>

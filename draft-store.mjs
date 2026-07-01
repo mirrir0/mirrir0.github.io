@@ -45,7 +45,8 @@ export function createDraftStore({ draftsDir, postsDir }) {
     if (!existsSync(dir)) return [];
     return readdirSync(dir)
       .filter((f) => f.endsWith(".md"))
-      .map((f) => readMeta(join(dir, f)));
+      .map((f) => readMeta(join(dir, f)))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   function readIn(dir, slug) {

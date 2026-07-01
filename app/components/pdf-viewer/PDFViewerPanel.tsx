@@ -56,7 +56,7 @@ function PDFContent({
       file={pdfUrl}
       onLoadSuccess={onLoadSuccess}
       loading={
-        <div className="flex items-center justify-center h-64 text-zinc-500 font-mono text-sm">
+        <div className="flex items-center justify-center h-64 text-muted-foreground font-mono text-sm">
           Loading PDF...
         </div>
       }
@@ -258,7 +258,7 @@ export function PDFViewerPanel() {
       const regex = new RegExp(`(${escapeRegExp(highlight)})`, "gi");
       return textItem.str.replace(
         regex,
-        '<mark class="bg-yellow-300/50 text-zinc-900 rounded px-0.5">$1</mark>'
+        '<mark class="bg-yellow-300/50 text-background rounded px-0.5">$1</mark>'
       );
     },
     [highlight]
@@ -296,7 +296,7 @@ export function PDFViewerPanel() {
 
       {/* Panel - fixed height, doesn't affect page layout */}
       <div
-        className="fixed right-0 top-0 h-screen w-full z-50 md:w-1/2 bg-zinc-900 border-l border-zinc-800 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 md:animate-none"
+        className="fixed right-0 top-0 h-screen w-full z-50 md:w-1/2 bg-card border-l border-border flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 md:animate-none"
         role="dialog"
         aria-modal="true"
         aria-label="PDF Viewer"
@@ -316,7 +316,7 @@ export function PDFViewerPanel() {
           className="flex-1 overflow-auto p-4"
         >
           {!pdfComponents ? (
-            <div className="flex items-center justify-center h-64 text-zinc-500 font-mono text-sm">
+            <div className="flex items-center justify-center h-64 text-muted-foreground font-mono text-sm">
               Loading PDF viewer...
             </div>
           ) : (

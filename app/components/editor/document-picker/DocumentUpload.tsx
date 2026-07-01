@@ -126,7 +126,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
             ? "border-red-400/50 hover:border-red-400"
             : uploadStatus === "success"
             ? "border-emerald-400/50"
-            : "border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/30"
+            : "border-border hover:border-border hover:bg-secondary/30"
         }`}
       >
         <input
@@ -139,19 +139,19 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
         {uploadStatus === "idle" && (
           <>
-            <Upload className="mx-auto text-zinc-400 mb-3" size={32} />
-            <p className="text-zinc-400 mb-1">
+            <Upload className="mx-auto text-card-foreground mb-3" size={32} />
+            <p className="text-card-foreground mb-1">
               Drag and drop a PDF here, or click to select
             </p>
-            <p className="text-zinc-500 text-sm">Maximum file size: 10MB</p>
+            <p className="text-muted-foreground text-sm">Maximum file size: 10MB</p>
           </>
         )}
 
         {uploadStatus === "uploading" && (
           <>
             <Loader2 className="mx-auto text-emerald-400 mb-3 animate-spin" size={32} />
-            <p className="text-zinc-300 mb-2">Uploading...</p>
-            <div className="w-full max-w-xs mx-auto bg-zinc-800 rounded-full h-2 overflow-hidden">
+            <p className="text-card-foreground mb-2">Uploading...</p>
+            <div className="w-full max-w-xs mx-auto bg-secondary rounded-full h-2 overflow-hidden">
               <div
                 className="bg-emerald-400 h-full transition-all duration-200"
                 style={{ width: `${uploadProgress}%` }}
@@ -164,7 +164,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
           <>
             <CheckCircle className="mx-auto text-emerald-400 mb-3" size={32} />
             <p className="text-emerald-400 mb-1">Upload complete!</p>
-            <p className="text-zinc-400 text-sm font-mono">{uploadedFilename}</p>
+            <p className="text-card-foreground text-sm font-mono">{uploadedFilename}</p>
           </>
         )}
 
@@ -178,7 +178,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                 e.stopPropagation();
                 resetUpload();
               }}
-              className="text-zinc-400 text-sm hover:text-zinc-300 underline"
+              className="text-card-foreground text-sm hover:text-card-foreground underline"
             >
               Try again
             </button>
@@ -190,7 +190,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
         <button
           type="button"
           onClick={resetUpload}
-          className="text-zinc-400 text-sm hover:text-zinc-300"
+          className="text-card-foreground text-sm hover:text-card-foreground"
         >
           Upload another file
         </button>

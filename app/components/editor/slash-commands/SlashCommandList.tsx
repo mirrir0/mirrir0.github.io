@@ -77,16 +77,19 @@ const SlashCommandList = forwardRef<SlashCommandListRef, SlashCommandListProps>(
 
     return (
       // Outer wrapper clips the scrollbar corners on all browsers
-      <div className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg overflow-hidden">
+      <div
+        className="overflow-hidden"
+        style={{
+          background: "var(--color-background-secondary, oklch(0.205 0.005 60))",
+          border: "1px solid var(--color-border-primary, oklch(0.26 0.005 60))",
+          borderRadius: "var(--border-radius-md, 5px)",
+        }}
+      >
         <div
           ref={containerRef}
           onWheel={handleWheel}
-          className="max-h-80 overflow-y-auto overscroll-contain
-            [&::-webkit-scrollbar]:w-2
-            [&::-webkit-scrollbar-track]:bg-transparent
-            [&::-webkit-scrollbar-thumb]:bg-zinc-600
-            [&::-webkit-scrollbar-thumb]:rounded-full
-            scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-600"
+          className="max-h-80 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full"
+          style={{ scrollbarColor: "var(--color-border-primary, oklch(0.26 0.005 60)) transparent" }}
         >
           {items.map((item, index) => {
             const Icon = item.icon;
@@ -97,11 +100,12 @@ const SlashCommandList = forwardRef<SlashCommandListRef, SlashCommandListProps>(
                 key={item.title}
                 ref={(el) => { itemRefs.current[index] = el; }}
                 type="button"
-                className={`flex items-center gap-3 w-full px-3 py-2 text-left transition-colors ${
+                className="flex items-center gap-3 w-full px-3 py-2 text-left transition-colors"
+                style={
                   isSelected
-                    ? "bg-emerald-400/20 text-emerald-400"
-                    : "text-zinc-300 hover:bg-zinc-700"
-                }`}
+                    ? { color: "#34d399", background: "rgba(52,211,153,0.16)" }
+                    : { color: "var(--color-text-secondary, oklch(0.6 0.005 90))" }
+                }
                 onClick={() => command(item)}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
@@ -110,7 +114,10 @@ const SlashCommandList = forwardRef<SlashCommandListRef, SlashCommandListProps>(
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium">{item.title}</span>
-                  <span className="font-mono text-xs text-zinc-500 truncate">
+                  <span
+                    className="text-xs truncate"
+                    style={{ fontFamily: "var(--font-mono, ui-monospace, monospace)", color: "var(--color-text-tertiary, oklch(0.5 0.005 90))" }}
+                  >
                     {item.description}
                   </span>
                 </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Editor } from "@tiptap/react";
 import {
   Bold,
@@ -19,6 +20,8 @@ import {
   Redo,
   FileText,
 } from "lucide-react";
+import { LinkDialog } from "./LinkDialog";
+import { ImageDialog } from "./ImageDialog";
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -30,33 +33,33 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
     return null;
   }
 
+  // Active state: fixed emerald — brand accent, not a host theme var.
+  // Inactive: --color-text-tertiary so the toolbar recedes but stays legible.
+  // Hover: --color-text-primary + --color-background-secondary for affordance.
   const buttonClass = (isActive: boolean = false) =>
     `p-1.5 rounded transition-colors ${
       isActive
-        ? "bg-emerald-400/20 text-emerald-400"
-        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
+        ? "text-[#34d399] bg-[rgba(52,211,153,0.16)]"
+        : "text-[var(--color-text-tertiary,oklch(0.5_0.005_90))] hover:text-[var(--color-text-primary,oklch(0.88_0.005_90))] hover:bg-[var(--color-background-secondary,oklch(0.205_0.005_60))]"
     }`;
 
   const disabledClass = "opacity-40 cursor-not-allowed";
 
-  const addLink = () => {
-    const url = window.prompt("Enter URL:");
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
-    }
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
+  const handleLinkSubmit = (url: string) => {
+    editor.chain().focus().setLink({ href: url }).run();
   };
 
-  const addImage = () => {
-    const url = window.prompt("Enter image URL:");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
+  const handleImageSubmit = (url: string) => {
+    editor.chain().focus().setImage({ src: url }).run();
   };
 
   const iconSize = 16;
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 py-1.5 px-1">
+    <div className="flex flex-wrap items-center gap-0.5 py-1 px-1.5 border-b border-[var(--color-border-primary,oklch(0.26_0.005_60))]">
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -90,7 +93,7 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
         <Code size={iconSize} />
       </button>
 
-      <div className="w-px h-4 bg-zinc-800 mx-1" />
+      <div className="w-px h-4 mx-1 bg-[var(--color-border-primary,oklch(0.26_0.005_60))]" />
 
       <button
         type="button"
@@ -117,7 +120,7 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
         <Heading3 size={iconSize} />
       </button>
 
-      <div className="w-px h-4 bg-zinc-800 mx-1" />
+      <div className="w-px h-4 mx-1 bg-[var(--color-border-primary,oklch(0.26_0.005_60))]" />
 
       <button
         type="button"
@@ -136,7 +139,7 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
         <ListOrdered size={iconSize} />
       </button>
 
-      <div className="w-px h-4 bg-zinc-800 mx-1" />
+      <div className="w-px h-4 mx-1 bg-[var(--color-border-primary,oklch(0.26_0.005_60))]" />
 
       <button
         type="button"
@@ -163,11 +166,11 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
         <Minus size={iconSize} />
       </button>
 
-      <div className="w-px h-4 bg-zinc-800 mx-1" />
+      <div className="w-px h-4 mx-1 bg-[var(--color-border-primary,oklch(0.26_0.005_60))]" />
 
       <button
         type="button"
-        onClick={addLink}
+        onClick={() => setLinkDialogOpen(true)}
         className={buttonClass(editor.isActive("link"))}
         title="Add Link"
       >
@@ -184,7 +187,7 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
       </button>
       <button
         type="button"
-        onClick={addImage}
+        onClick={() => setImageDialogOpen(true)}
         className={buttonClass()}
         title="Add Image"
       >
@@ -199,7 +202,7 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
         <FileText size={iconSize} />
       </button>
 
-      <div className="w-px h-4 bg-zinc-800 mx-1" />
+      <div className="w-px h-4 mx-1 bg-[var(--color-border-primary,oklch(0.26_0.005_60))]" />
 
       <button
         type="button"
@@ -219,6 +222,16 @@ export default function EditorToolbar({ editor, onOpenDocumentPicker }: EditorTo
       >
         <Redo size={iconSize} />
       </button>
+      <LinkDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        onSubmit={handleLinkSubmit}
+      />
+      <ImageDialog
+        open={imageDialogOpen}
+        onOpenChange={setImageDialogOpen}
+        onSubmit={handleImageSubmit}
+      />
     </div>
   );
 }

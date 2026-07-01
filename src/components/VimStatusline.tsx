@@ -99,62 +99,62 @@ export function VimStatusline() {
       {hasEditorActions && editorContext ? (
         isDraftEditor ? (
           <>
-            <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
+            <span className="bg-emerald-400 text-background px-2 py-0.5 font-bold">
               EDITOR
             </span>
-            <span className="bg-amber-500 text-zinc-900 px-2 py-0.5 font-bold">
+            <span className="bg-amber-500 text-background px-2 py-0.5 font-bold">
               DRAFT
             </span>
             <button
               onClick={() => editorContext.onSave?.()}
               disabled={editorContext.isSaving}
-              className="bg-zinc-700 text-zinc-300 px-2 py-0.5 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-muted text-card-foreground px-2 py-0.5 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Save
             </button>
           </>
         ) : (
           <>
-            <span className="bg-amber-500 text-zinc-900 px-2 py-0.5 font-bold">
+            <span className="bg-amber-500 text-background px-2 py-0.5 font-bold">
               POST
             </span>
             <button
               onClick={() => editorContext.onPublish?.()}
-              className="bg-zinc-700 text-zinc-300 px-2 py-0.5 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-muted text-card-foreground px-2 py-0.5 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Unpublish
             </button>
             <button
               onClick={() => editorContext.onDelete?.()}
-              className="bg-zinc-700 text-red-400 px-2 py-0.5 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-muted text-red-400 px-2 py-0.5 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Delete
             </button>
           </>
         )
       ) : (
-        <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
+        <span className="bg-emerald-400 text-background px-2 py-0.5 font-bold">
           {mode}
         </span>
       )}
-      <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 truncate max-w-md">
+      <span className="bg-secondary text-card-foreground px-2 py-0.5 truncate max-w-md">
         {headingTrail.length > 0
           ? headingTrail.map((h, i) => (
               <span key={i}>
-                {i > 0 && <span className="text-zinc-500"> › </span>}
+                {i > 0 && <span className="text-muted-foreground"> › </span>}
                 {h}
               </span>
             ))
           : path}
       </span>
-      <span className="bg-zinc-800 flex-1" />
+      <span className="bg-secondary flex-1" />
 
       {/* Right side */}
       {hasEditorActions && editorContext ? (
         isDraftEditor ? (
           <>
             {editorContext.saveStatus !== "idle" && (
-              <span className="bg-zinc-800 text-zinc-400 px-2 py-0.5">
+              <span className="bg-secondary text-card-foreground px-2 py-0.5">
                 {editorContext.saveStatus === "saving" && (
                   <span className="text-amber-400 animate-pulse">saving...</span>
                 )}
@@ -171,12 +171,12 @@ export function VimStatusline() {
             />
           </>
         ) : (
-          <span className="bg-zinc-700 text-zinc-400 px-2 py-0.5">{section}</span>
+          <span className="bg-muted text-card-foreground px-2 py-0.5">{section}</span>
         )
       ) : (
         <>
-          <span className="bg-zinc-700 text-zinc-400 px-2 py-0.5">{section}</span>
-          <span className="bg-emerald-400 text-zinc-900 px-2 py-0.5 font-bold">
+          <span className="bg-muted text-card-foreground px-2 py-0.5">{section}</span>
+          <span className="bg-emerald-400 text-background px-2 py-0.5 font-bold">
             {scrollInfo.percent}%
           </span>
         </>

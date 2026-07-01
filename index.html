@@ -8,6 +8,19 @@
   <body>
     <div id="root"></div>
     <script>
+      // Apply saved theme before first paint to avoid flash.
+      // Sets both the "dark" class and the MCP-standard CSS variables
+      // that the @theme inline block resolves through. Defaults to dark.
+      (function () {
+        var theme = localStorage.getItem("blog-theme") || "dark";
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.documentElement.style.colorScheme = theme;
+        var vars = theme === "light"
+          ? { "--color-background-primary": "oklch(0.985 0.002 90)", "--color-background-secondary": "oklch(0.955 0.002 90)", "--color-background-tertiary": "oklch(0.955 0.002 90)", "--color-text-primary": "oklch(0.18 0 0)", "--color-text-secondary": "oklch(0.42 0 0)", "--color-text-tertiary": "oklch(0.55 0 0)", "--color-border-primary": "oklch(0.86 0 0)", "--color-border-secondary": "oklch(0.86 0 0)" }
+          : { "--color-background-primary": "oklch(0.155 0.005 60)", "--color-background-secondary": "oklch(0.205 0.005 60)", "--color-background-tertiary": "oklch(0.205 0.005 60)", "--color-text-primary": "oklch(0.88 0.005 90)", "--color-text-secondary": "oklch(0.6 0.005 90)", "--color-text-tertiary": "oklch(0.5 0.005 90)", "--color-border-primary": "oklch(0.26 0.005 60)", "--color-border-secondary": "oklch(0.26 0.005 60)" };
+        var s = document.documentElement.style;
+        for (var k in vars) s.setProperty(k, vars[k]);
+      })();
       // GitHub Pages SPA deep-link restore: public/404.html stashes the
       // requested path and bounces here; replay it into history before the
       // app boots so createBrowserRouter starts on the right route.

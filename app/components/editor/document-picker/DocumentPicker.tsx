@@ -45,24 +45,24 @@ export default function DocumentPicker({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-md sm:max-w-lg"
+        className="bg-card border border-border rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-md sm:max-w-lg"
         showCloseButton={true}
       >
         <DialogHeader className="pb-0">
-          <DialogTitle className="text-zinc-100 font-mono text-base">
+          <DialogTitle className="text-foreground font-mono text-base">
             Select Document
           </DialogTitle>
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="flex border-b border-zinc-800 -mx-6 px-6">
+        <div className="flex border-b border-border -mx-6 px-6">
           <button
             type="button"
             onClick={() => setActiveTab("search")}
             className={`px-4 py-2.5 text-sm font-mono transition-colors ${
               activeTab === "search"
                 ? "text-emerald-400 border-b-2 border-emerald-400 -mb-px"
-                : "text-zinc-500 hover:text-zinc-300"
+                : "text-muted-foreground hover:text-card-foreground"
             }`}
           >
             Search
@@ -73,7 +73,7 @@ export default function DocumentPicker({
             className={`px-4 py-2.5 text-sm font-mono transition-colors ${
               activeTab === "upload"
                 ? "text-emerald-400 border-b-2 border-emerald-400 -mb-px"
-                : "text-zinc-500 hover:text-zinc-300"
+                : "text-muted-foreground hover:text-card-foreground"
             }`}
           >
             Upload

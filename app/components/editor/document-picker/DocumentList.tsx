@@ -75,7 +75,7 @@ export default function DocumentList({ onSelect }: DocumentListProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="animate-spin text-zinc-500" size={24} />
+        <Loader2 className="animate-spin text-muted-foreground" size={24} />
       </div>
     );
   }
@@ -92,7 +92,7 @@ export default function DocumentList({ onSelect }: DocumentListProps) {
     <div className="flex flex-col gap-3">
       <div className="relative">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           size={16}
         />
         <input
@@ -100,15 +100,15 @@ export default function DocumentList({ onSelect }: DocumentListProps) {
           placeholder="Search PDFs..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 pl-9 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/20 transition-colors"
+          className="w-full bg-secondary border border-border rounded-md px-3 py-2 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/20 transition-colors"
         />
       </div>
 
-      <div className="max-h-72 overflow-y-auto -mx-1 px-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+      <div className="max-h-72 overflow-y-auto -mx-1 px-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         {filteredPdfs.length === 0 ? (
           <div className="text-center py-10">
-            <FileText className="mx-auto text-zinc-600 mb-3" size={32} />
-            <p className="text-zinc-500 text-sm">
+            <FileText className="mx-auto text-muted-foreground mb-3" size={32} />
+            <p className="text-muted-foreground text-sm">
               {pdfs.length === 0 ? "No PDFs uploaded yet" : "No matching PDFs"}
             </p>
           </div>
@@ -122,7 +122,7 @@ export default function DocumentList({ onSelect }: DocumentListProps) {
                 className={`flex items-center gap-3 p-2.5 rounded-md cursor-pointer text-left transition-all w-full ${
                   selectedFile === pdf.filename
                     ? "bg-emerald-400/10 ring-1 ring-emerald-400"
-                    : "hover:bg-zinc-800/70"
+                    : "hover:bg-secondary/70"
                 }`}
               >
                 <div className="flex-shrink-0">
@@ -131,18 +131,18 @@ export default function DocumentList({ onSelect }: DocumentListProps) {
                     className={
                       selectedFile === pdf.filename
                         ? "text-emerald-400"
-                        : "text-zinc-500"
+                        : "text-muted-foreground"
                     }
                   />
                 </div>
                 <div className="flex-1 min-w-0 overflow-hidden">
                   <p
-                    className="text-zinc-300 truncate font-mono text-sm leading-tight"
+                    className="text-card-foreground truncate font-mono text-sm leading-tight"
                     title={pdf.filename}
                   >
                     {pdf.filename}
                   </p>
-                  <p className="text-zinc-500 text-xs mt-0.5">
+                  <p className="text-muted-foreground text-xs mt-0.5">
                     {formatFileSize(pdf.size)} · {formatDate(pdf.modifiedAt)}
                   </p>
                 </div>

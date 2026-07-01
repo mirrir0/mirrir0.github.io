@@ -19,8 +19,15 @@ import { createRoot } from "react-dom/client";
 import { setApp } from "./mcp/app-singleton";
 import { blogClient } from "./blog-client";
 import { EditorProvider, useEditorContext } from "../app/components/editor/EditorContext";
-import { DraftMenu } from "../app/components/DraftMenu";
+import { VimStatusline } from "./components/VimStatusline";
+import { MemoryRouter } from "react-router";
 import { useConfirm } from "./components/useConfirm";
+import type { Editor } from "@tiptap/core";
+import { applyEdit, type BlogEdit as ApplyBlogEdit } from "../app/components/editor/suggestions/apply-edit";
+import { collectSuggestions, type PendingSuggestion } from "../app/components/editor/suggestions/suggestion-mark";
+import ChangesPanel from "../app/components/editor/suggestions/ChangesPanel";
+import SuggestionPopover, { type PopoverAnchor } from "../app/components/editor/suggestions/SuggestionPopover";
+import { glowElement, flashWrite } from "./glow";
 import "../app/app.css";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -48,6 +55,13 @@ interface DraftData {
   slug: string; title: string; date: string;
   description: string; tags: string[]; content: string;
 }
+
+// An agent tool result routed into the open editor. "draft" replaces the body
+// (create/update/get); "edit" applies a surgical change as a pending suggestion
+// (replace/insert/delete/append). The nonce makes each result apply exactly once.
+type IncomingIntent =
+  | { nonce: number; kind: "draft"; data: DraftData }
+  | { nonce: number; kind: "edit"; edit: BlogEdit };
 
 // ── Lazy editor imports ───────────────────────────────────────────────
 
@@ -302,8 +316,11 @@ function DraftsListView({ drafts, onSelect }: {
 
 // ── Draft Editor ─────────────────────────────────────────────────────
 
-function DraftMcpEditor({ slug, app, onBack, displayMode }: {
+function DraftMcpEditor({ slug, app, onBack, displayMode, incoming }: {
   slug: string; app: App; onBack: () => void; displayMode: DisplayMode;
+  // An agent tool result to apply live once the editor is ready: a full draft
+  // body (update/create/get) or a surgical edit shown as a pending suggestion.
+  incoming: IncomingIntent | null;
 }) {
   const [draft, setDraft] = useState<DraftData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -322,28 +339,120 @@ function DraftMcpEditor({ slug, app, onBack, displayMode }: {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
 
+  // ── Live agent edits ───────────────────────────────────────────────────
+  // The editor instance (surfaced by TiptapEditor) and the body element, plus
+  // the set of agent-proposed suggestions pending accept/reject. While any are
+  // pending, autosave is suspended (a pending delete still holds its text in the
+  // doc, so saving now would persist text the human may reject).
+  const editorRef = useRef<Editor | null>(null);
+  const editorBodyRef = useRef<HTMLDivElement>(null);
+  const [editorReady, setEditorReady] = useState(false);
+  const [pending, setPending] = useState<PendingSuggestion[]>([]);
+  const [popover, setPopover] = useState<PopoverAnchor | null>(null);
+  const hasPending = pending.length > 0;
+  const pendingRef = useRef(false);
+  useEffect(() => { pendingRef.current = hasPending; }, [hasPending]);
+
+  // Applies a draft body and resets the dirty baseline so an externally-sourced
+  // body (initial load, agent write) doesn't read as dirty and echo back a save.
+  const applyDraft = useCallback((dd: DraftData) => {
+    setDraft(dd);
+    setContent(dd.content || "");
+    setFrontmatter({
+      title: dd.title || "",
+      date: dd.date || new Date().toISOString(),
+      description: dd.description || "",
+      tags: dd.tags || [],
+    });
+  }, []);
+
   // Load draft data on mount/slug change.
   useEffect(() => {
     setLoading(true);
     setLoadError(null);
     blogClient.getDraft(slug).then((d) => {
-      if (d) {
-        const dd = d as DraftData;
-        setDraft(dd);
-        setContent(dd.content || "");
-        setFrontmatter({
-          title: dd.title || "",
-          date: dd.date || new Date().toISOString(),
-          description: dd.description || "",
-          tags: dd.tags || [],
-        });
-      } else {
-        setLoadError("Draft not found");
-      }
+      if (d) applyDraft(d as DraftData);
+      else setLoadError("Draft not found");
     }).catch((e) => {
       setLoadError((e as Error).message || "Failed to load draft");
     }).finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, applyDraft]);
+
+  // TiptapEditor hands us its instance on ready (null on teardown). Track pending
+  // suggestions off its update stream and drive the inline accept/reject popover.
+  const handleEditor = useCallback((editor: Editor | null) => {
+    editorRef.current = editor;
+    setEditorReady(!!editor);
+    if (!editor) { setPending([]); setPopover(null); return; }
+    const refresh = () => {
+      const next = collectSuggestions(editor.state.doc);
+      setPending((prev) => (prev.length === 0 && next.length === 0 ? prev : next));
+    };
+    refresh();
+    editor.on("update", refresh);
+    const onClick = (ev: MouseEvent) => {
+      const el = (ev.target as HTMLElement | null)?.closest?.("[data-sugg-id]") as HTMLElement | null;
+      const id = el?.getAttribute("data-sugg-id");
+      if (!el || !id) { setPopover(null); return; }
+      const r = el.getBoundingClientRect();
+      setPopover({ id, rect: { top: r.top, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height } });
+    };
+    editor.view.dom.addEventListener("click", onClick);
+  }, []);
+
+  // Apply the incoming agent intent once the editor is mounted and the base
+  // draft has loaded. Guarded by nonce so each tool result applies exactly once.
+  const appliedNonceRef = useRef<number>(-1);
+  useEffect(() => {
+    if (!incoming || !editorReady || loading) return;
+    if (incoming.nonce === appliedNonceRef.current) return;
+    appliedNonceRef.current = incoming.nonce;
+    if (incoming.kind === "draft") {
+      applyDraft(incoming.data);
+      // Highlight the freshly-written text (not just a ring around the body).
+      flashWrite(editorBodyRef.current);
+    } else {
+      const editor = editorRef.current;
+      if (!editor) return;
+      const res = applyEdit(editor, incoming.edit as unknown as ApplyBlogEdit);
+      if (res.ok && res.ids) {
+        for (const id of res.ids) {
+          editor.view.dom.querySelectorAll(`[data-sugg-id="${id}"]`)
+            .forEach((el) => glowElement(el as HTMLElement));
+        }
+      }
+    }
+  }, [incoming, editorReady, loading, applyDraft]);
+
+  // The popover is pinned to viewport coords captured at click time; any scroll
+  // or resize invalidates them, so dismiss it.
+  useEffect(() => {
+    if (!popover) return;
+    const close = () => setPopover(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [popover]);
+
+  const resolveOne = useCallback((id: string, mode: "accept" | "reject") => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    if (mode === "accept") editor.commands.acceptSuggestion(id);
+    else editor.commands.rejectSuggestion(id);
+    setPopover(null);
+  }, []);
+
+  const revealSuggestion = useCallback((id: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const el = editor.view.dom.querySelector(`[data-sugg-id="${id}"]`) as HTMLElement | null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    glowElement(el);
+  }, []);
 
   // Track dirty state
   const isDirty = frontmatter.title !== (draft?.title ?? "")
@@ -353,9 +462,9 @@ function DraftMcpEditor({ slug, app, onBack, displayMode }: {
 
   useEffect(() => { dirtyRef.current = isDirty; }, [isDirty]);
 
-  // Autosave
+  // Autosave (suspended while agent suggestions are pending — see pendingRef)
   useEffect(() => {
-    if (!isDirty || loading) return;
+    if (!isDirty || loading || pendingRef.current) return;
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(async () => {
       setSaveStatus("saving");
@@ -384,7 +493,7 @@ function DraftMcpEditor({ slug, app, onBack, displayMode }: {
 
   // Ctrl+S
   const handleSave = useCallback(async () => {
-    if (!dirtyRef.current) return;
+    if (!dirtyRef.current || pendingRef.current) return;
     setSaveStatus("saving");
     try {
       if (currentSlug !== slug) {
@@ -470,9 +579,23 @@ function DraftMcpEditor({ slug, app, onBack, displayMode }: {
   }
 
   return (
-    <div className="blog-mcp-main" style={{ gap: 0 }}>
+    // Full-height editor chrome: frontmatter pinned at top, body scrolls in the
+    // middle, status bar pinned at bottom. Owns its own layout (not .blog-mcp-main,
+    // whose padding + scroll would double-scroll and let the status bar drift).
+    <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Vim statusline — the exact component the standalone editor uses, under
+          the MIRRIR header (so its dropdown opens downward, into the content).
+          A MemoryRouter seeds useLocation with the draft path; key remounts it on
+          rename. Save/publish/delete + save status flow through EditorContext. */}
+      <div className="shrink-0">
+        <MemoryRouter key={currentSlug} initialEntries={[`/draft/${currentSlug}`]}>
+          <VimStatusline />
+        </MemoryRouter>
+      </div>
+
       {/* Frontmatter */}
       <div style={{
+        flexShrink: 0,
         padding: "8px 12px", borderBottom: "1px solid var(--color-border-primary, oklch(0.26 0.005 60))",
         background: "var(--color-background-primary, oklch(0.155 0.005 60))",
       }}>
@@ -486,44 +609,34 @@ function DraftMcpEditor({ slug, app, onBack, displayMode }: {
         </Suspense>
       </div>
 
-      {/* Editor body */}
-      <div style={{ flex: 1, overflow: "auto", padding: "12px" }}>
-        <div className="prose prose-invert prose-zinc max-w-none
-          prose-headings:font-mono prose-headings:font-normal
-          prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
-          prose-p:text-zinc-300 prose-p:leading-relaxed
-          prose-a:text-emerald-400 prose-a:no-underline
-          prose-code:text-emerald-400 prose-code:bg-zinc-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-          prose-code:before:content-none prose-code:after:content-none
-          prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800
-          prose-strong:text-zinc-100 prose-li:marker:text-zinc-600
-          prose-hr:border-zinc-800 prose-blockquote:border-zinc-700 prose-blockquote:text-zinc-400">
+      {/* Review rail for pending agent edits — accept/reject per change + bulk. */}
+      <ChangesPanel
+        pending={pending}
+        onAccept={(id) => editorRef.current?.commands.acceptSuggestion(id)}
+        onReject={(id) => editorRef.current?.commands.rejectSuggestion(id)}
+        onAcceptAll={() => editorRef.current?.commands.acceptAllSuggestions()}
+        onRejectAll={() => editorRef.current?.commands.rejectAllSuggestions()}
+        onReveal={revealSuggestion}
+      />
+
+      {/* Editor body — the only scroll region. Toolbar sticks to its top (top:0). */}
+      <div style={{ flex: "1 1 auto", minHeight: 0, overflow: "auto", padding: "0 12px 12px" }}>
+        {/* blog-editor scopes all themed prose colors; prose max-w-none for typography structure */}
+        <div className="blog-editor prose max-w-none" ref={editorBodyRef}>
           <Suspense fallback={<div className="blog-mcp-editor-loading"><span className="blog-mcp-spinner" /></div>}>
-            <TiptapEditor content={content} onChange={setContent} />
+            <TiptapEditor content={content} onChange={setContent} onEditor={handleEditor} toolbarTop="0px" />
           </Suspense>
+          {popover && (
+            <SuggestionPopover
+              anchor={popover}
+              suggestion={pending.find((s) => s.id === popover.id)}
+              onAccept={(id) => resolveOne(id, "accept")}
+              onReject={(id) => resolveOne(id, "reject")}
+            />
+          )}
         </div>
       </div>
 
-      {/* Status bar with save indicator + actions */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "4px 12px", flexShrink: 0,
-        borderTop: "1px solid var(--color-border-primary, oklch(0.26 0.005 60))",
-        background: "var(--color-background-primary, oklch(0.155 0.005 60))",
-        fontFamily: "var(--font-mono, monospace)", fontSize: "10px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "var(--color-text-secondary, oklch(0.6 0.005 90))" }}>/{currentSlug}</span>
-          {saveStatus === "saving" && <span style={{ color: "#f59e0b" }}>saving...</span>}
-          {saveStatus === "saved" && <span style={{ color: "var(--color-text-success, #00E639)" }}>saved</span>}
-        </div>
-        <DraftMenu
-          variant="statusline"
-          onPublish={handlePublish}
-          onDelete={handleDelete}
-          disabled={isPublishing}
-        />
-      </div>
     </div>
   );
 }
@@ -664,6 +777,9 @@ function ToolResultRouter({ data, isError }: { data: BlogToolResult; isError: bo
 
 // ── App Shell ──────────────────────────────────────────────────────────────
 
+// Monotonic id so each agent tool result applies to the open editor exactly once.
+let intentSeq = 0;
+
 function BlogMcpApp() {
   const [toolData, setToolData] = useState<BlogToolResult | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>("inline");
@@ -674,6 +790,7 @@ function BlogMcpApp() {
   // View routing
   const [view, setView] = useState<"list" | "editor">("list");
   const [editSlug, setEditSlug] = useState<string | null>(null);
+  const [incoming, setIncoming] = useState<IncomingIntent | null>(null);
 
   const { app, error } = useApp({
     appInfo: { name: "Blog", version: "1.0.0" },
@@ -689,7 +806,35 @@ function BlogMcpApp() {
         const sc = (r.structuredContent ?? {}) as unknown as BlogToolResult;
         setToolData(sc);
         setIsError(r.isError ?? false);
-        if (sc.tool === "list_drafts") setView("list");
+
+        if (sc.tool === "list_drafts") { setView("list"); return; }
+        if (r.isError || sc.error) return; // failures stay as a result card
+
+        // Draft writes (create/update/get) open the editor on that draft; if the
+        // result carries a body, push it in live so the agent's write is visible.
+        const DRAFT_TOOLS = ["create_draft", "update_draft", "get_draft"];
+        const EDIT_TOOLS = ["replace_text", "delete_text", "insert_text", "append_text"];
+        if (sc.slug && DRAFT_TOOLS.includes(sc.tool ?? "")) {
+          setEditSlug(sc.slug);
+          setView("editor");
+          if (sc.content !== undefined) {
+            setIncoming({
+              nonce: ++intentSeq, kind: "draft",
+              data: {
+                slug: sc.slug, title: sc.title ?? "", date: sc.date ?? "",
+                description: sc.description ?? "", tags: sc.tags ?? [], content: sc.content ?? "",
+              },
+            });
+          }
+          return;
+        }
+        // Surgical edits open the editor and land as a pending suggestion in place.
+        if (sc.slug && EDIT_TOOLS.includes(sc.tool ?? "") && sc.edit) {
+          setEditSlug(sc.slug);
+          setView("editor");
+          setIncoming({ nonce: ++intentSeq, kind: "edit", edit: sc.edit });
+          return;
+        }
       };
       a.onhostcontextchanged = (ctx: McpUiHostContext) => {
         setHostContext((prev) => ({ ...prev, ...ctx }));
@@ -722,6 +867,7 @@ function BlogMcpApp() {
   const handleBackToList = useCallback(() => {
     setView("list");
     setEditSlug(null);
+    setIncoming(null);
   }, []);
 
   if (error) {
@@ -751,7 +897,7 @@ function BlogMcpApp() {
         <EditorProvider>
           <McpHeader app={app} displayMode={displayMode}
             backLabel="Back to drafts" onBack={handleBackToList} />
-          <DraftMcpEditor slug={editSlug} app={app} onBack={handleBackToList} displayMode={displayMode} />
+          <DraftMcpEditor slug={editSlug} app={app} onBack={handleBackToList} displayMode={displayMode} incoming={incoming} />
         </EditorProvider>
       ) : (
         <>

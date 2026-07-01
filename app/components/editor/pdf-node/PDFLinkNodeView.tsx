@@ -71,7 +71,7 @@ export default function PDFLinkNodeView({ node, updateAttributes, deleteNode }: 
   if (isEditing) {
     return (
       <NodeViewWrapper as="span" className="inline-block align-baseline">
-        <span className="bg-zinc-800 border border-emerald-400 rounded px-2 py-0.5 inline-flex items-center gap-1">
+        <span className="bg-secondary border border-emerald-400 rounded px-2 py-0.5 inline-flex items-center gap-1">
           <FileText size={14} className="text-emerald-400 flex-shrink-0" />
           <span className="relative inline-block">
             {/* Hidden span to measure text width */}
@@ -98,7 +98,7 @@ export default function PDFLinkNodeView({ node, updateAttributes, deleteNode }: 
           <button
             type="button"
             onClick={handleCancel}
-            className="text-zinc-400 hover:text-zinc-300 p-0.5"
+            className="text-card-foreground hover:text-card-foreground p-0.5"
           >
             <X size={12} />
           </button>
@@ -120,7 +120,7 @@ export default function PDFLinkNodeView({ node, updateAttributes, deleteNode }: 
         <button
           type="button"
           onClick={handleClick}
-          className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 inline-flex items-center gap-1 cursor-pointer hover:bg-zinc-700 transition-colors max-w-full"
+          className="bg-secondary border border-border rounded px-2 py-0.5 inline-flex items-center gap-1 cursor-pointer hover:bg-muted transition-colors max-w-full"
         >
           <FileText size={14} className="text-emerald-400 flex-shrink-0" />
           <span className="text-emerald-400 font-mono text-sm truncate" title={displayText}>
@@ -130,11 +130,11 @@ export default function PDFLinkNodeView({ node, updateAttributes, deleteNode }: 
 
         {isHovered && (
           <span className="absolute -top-8 left-0 pb-2 z-10">
-            <span className="flex items-center gap-0.5 bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5 shadow-lg">
+            <span className="flex items-center gap-0.5 bg-card border border-border rounded px-1 py-0.5 shadow-lg">
               <button
                 type="button"
                 onClick={handleEdit}
-                className="text-zinc-400 hover:text-zinc-200 p-1 rounded hover:bg-zinc-800 transition-colors"
+                className="text-card-foreground hover:text-foreground p-1 rounded hover:bg-secondary transition-colors"
                 title="Edit label"
               >
                 <Pencil size={12} />
@@ -142,7 +142,7 @@ export default function PDFLinkNodeView({ node, updateAttributes, deleteNode }: 
               <button
                 type="button"
                 onClick={handleDelete}
-                className="text-zinc-400 hover:text-red-400 p-1 rounded hover:bg-zinc-800 transition-colors"
+                className="text-card-foreground hover:text-red-400 p-1 rounded hover:bg-secondary transition-colors"
                 title="Delete"
               >
                 <Trash2 size={12} />

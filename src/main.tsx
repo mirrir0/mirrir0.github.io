@@ -47,15 +47,16 @@ if (isAno) {
   const _unsub = router.subscribe((state) => {
     if (!didInitialSync) {
       didInitialSync = true;
-      // Signal readiness: the host will respond with host-navigate
-      // if there is a stored path to restore.
-      window.parent.postMessage({ kind: "panel-ready" }, "*");
+      // First callback after mount — don't broadcast; wait for the host
+      // to replay host-navigate if there is a stored path to restore.
+      // The ext-apps App below handles the readiness handshake instead
+      // of the old panel-ready postMessage.
       return;
     }
     const url = state.location.pathname + state.location.search;
     window.parent.postMessage({ kind: "external-location", url }, "*");
   });
-  void _unsub; // retained for potential cleanup; lives for window lifetime
+  void _unsub; // retained for cleanup; lives for window lifetime
 
   window.addEventListener("message", (event) => {
     // Only accept messages from the same origin (proxy-served iframe).
@@ -63,6 +64,28 @@ if (isAno) {
     if (event.data?.kind === "host-navigate" && typeof event.data.url === "string") {
       router.navigate(event.data.url);
     }
+  });
+
+  // Wire an ext-apps App to receive host-context-changed (theme + CSS vars)
+  // from AnomalousRuntimePanel's AppBridge. Replaces the old panel-ready ping.
+  // Async so it never blocks first paint.
+  void import("@modelcontextprotocol/ext-apps").then(async ({ App, PostMessageTransport, applyDocumentTheme, applyHostStyleVariables }) => {
+    const app = new App({ name: "blog-panel", version: "0.0.0" });
+    // Register before connect — host-context-changed can fire immediately.
+    app.onhostcontextchanged = (ctx) => {
+      if (ctx.theme) {
+        applyDocumentTheme(ctx.theme);
+        document.documentElement.classList.toggle("dark", ctx.theme === "dark");
+      }
+      if (ctx.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
+    };
+    await app.connect(new PostMessageTransport(window.parent, window.parent));
+    const ctx = app.getHostContext();
+    if (ctx?.theme) {
+      applyDocumentTheme(ctx.theme);
+      document.documentElement.classList.toggle("dark", ctx.theme === "dark");
+    }
+    if (ctx?.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
   });
 }
 

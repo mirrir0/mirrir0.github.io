@@ -12,7 +12,47 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { AppBridge, PostMessageTransport } from "@modelcontextprotocol/ext-apps/app-bridge";
+import type { McpUiStyles } from "@modelcontextprotocol/ext-apps/app-bridge";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
+// ── Theme variable sets ───────────────────────────────────────────────────
+// Keys are the MCP-standard McpUiStyleVariableKey set; any key outside that set
+// is rejected by AppBridge schema validation.  Values mirror the blog's own
+// CSS design tokens so the panel retheming is visually obvious.
+
+// McpUiStyles requires all 76 keys present (values may be undefined).
+// We supply only the meaningful subset and cast — the bridge sends only what's set.
+const DARK_VARS = {
+  "--color-background-primary":   "oklch(0.155 0.005 60)",
+  "--color-background-secondary": "oklch(0.205 0.005 60)",
+  "--color-background-tertiary":  "oklch(0.205 0.005 60)",
+  "--color-text-primary":         "oklch(0.88 0.005 90)",
+  "--color-text-secondary":       "oklch(0.6 0.005 90)",
+  "--color-text-tertiary":        "oklch(0.5 0.005 90)",
+  "--color-border-primary":       "oklch(0.26 0.005 60)",
+  "--color-border-secondary":     "oklch(0.26 0.005 60)",
+  "--color-ring-primary":         "#34d399",
+  "--font-sans":                  '"Fira Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  "--font-mono":                  '"Geist Mono", "JetBrains Mono", ui-monospace, monospace',
+  "--border-radius-md":           "5px",
+  "--border-radius-sm":           "4px",
+};
+
+const LIGHT_VARS = {
+  "--color-background-primary":   "oklch(0.985 0.002 90)",
+  "--color-background-secondary": "oklch(0.955 0.002 90)",
+  "--color-background-tertiary":  "oklch(0.955 0.002 90)",
+  "--color-text-primary":         "oklch(0.18 0 0)",
+  "--color-text-secondary":       "oklch(0.42 0 0)",
+  "--color-text-tertiary":        "oklch(0.55 0 0)",
+  "--color-border-primary":       "oklch(0.86 0 0)",
+  "--color-border-secondary":     "oklch(0.86 0 0)",
+  "--color-ring-primary":         "#34d399",
+  "--font-sans":                  '"Fira Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  "--font-mono":                  '"Geist Mono", "JetBrains Mono", ui-monospace, monospace',
+  "--border-radius-md":           "5px",
+  "--border-radius-sm":           "4px",
+};
 
 const IMPL = { name: "blog-host-harness", version: "1.0.0" };
 const log = (m: string) => {
@@ -38,6 +78,7 @@ const bridge = new AppBridge(
       containerDimensions: { maxHeight: 6000 },
       displayMode: "inline",
       availableDisplayModes: ["inline", "fullscreen"],
+      styles: { variables: DARK_VARS as unknown as McpUiStyles },
     },
   },
 );
@@ -50,6 +91,21 @@ await new Promise<void>((resolve) => {
 });
 await bridge.connect(new PostMessageTransport(iframe.contentWindow!, iframe.contentWindow!));
 log("panel bridged (ext-apps handshake complete)");
+
+// Theme toggle — lets a developer watch the panel re-theme live.
+let currentTheme: "dark" | "light" = "dark";
+button("btn-theme-light", async () => {
+  if (currentTheme === "light") return;
+  currentTheme = "light";
+  bridge.setHostContext({ theme: "light", styles: { variables: LIGHT_VARS as unknown as McpUiStyles } });
+  log("host → theme: light");
+});
+button("btn-theme-dark", async () => {
+  if (currentTheme === "dark") return;
+  currentTheme = "dark";
+  bridge.setHostContext({ theme: "dark", styles: { variables: DARK_VARS as unknown as McpUiStyles } });
+  log("host → theme: dark");
+});
 
 /** One agent step: call a tool, then deliver its input + result to the panel. */
 async function drive(name: string, args: Record<string, unknown>) {

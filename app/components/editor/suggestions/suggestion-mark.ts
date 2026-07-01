@@ -78,21 +78,30 @@ export function collectSuggestions(doc: PMNode): PendingSuggestion[] {
 export function resolveIds(state: EditorState, tr: Transaction, ids: string[], mode: "accept" | "reject"): boolean {
   const markType = state.schema.marks.suggestion;
   const idSet = new Set(ids);
-  const ops: Array<{ from: number; to: number; removeText: boolean }> = [];
+  // `block` is set when the suggestion text is the ENTIRE content of its parent
+  // textblock (e.g. an appended paragraph): removing only the text would leave an
+  // empty <p>, so we remove the whole node instead. Never set for the doc's first
+  // block, so we can't empty the document.
+  const ops: Array<{ from: number; to: number; removeText: boolean; block?: { from: number; to: number } }> = [];
   // Walk once; every suggestion range whose id is targeted resolves by its own op.
-  state.doc.descendants((node, pos) => {
+  state.doc.descendants((node, pos, parent) => {
     if (!node.isText) return;
     for (const mark of node.marks) {
       if (mark.type.name !== "suggestion" || !idSet.has(mark.attrs.id as string)) continue;
       const op = mark.attrs.op as SuggestionOp;
       const removeText = (mode === "accept" && op === "delete") || (mode === "reject" && op === "insert");
-      ops.push({ from: pos, to: pos + node.nodeSize, removeText });
+      let block: { from: number; to: number } | undefined;
+      if (removeText && parent?.isTextblock && parent.childCount === 1) {
+        const from = pos - 1; // the block's opening boundary, just before its text
+        if (from > 0) block = { from, to: from + parent.nodeSize };
+      }
+      ops.push({ from: pos, to: pos + node.nodeSize, removeText, block });
     }
   });
   if (!ops.length) return false;
   ops.sort((a, b) => b.from - a.from);
   for (const o of ops) {
-    if (o.removeText) tr.delete(o.from, o.to);
+    if (o.removeText) tr.delete(o.block ? o.block.from : o.from, o.block ? o.block.to : o.to);
     else tr.removeMark(o.from, o.to, markType);
   }
   return true;

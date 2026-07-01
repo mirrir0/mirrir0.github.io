@@ -19,3 +19,17 @@ export function glowElement(el: HTMLElement | null): void {
     { duration: 1300, easing: "ease-out" },
   );
 }
+
+/**
+ * Flash an emerald highlight across the prose blocks an agent just wrote, then
+ * fade it out — marks the freshly-written content (vs. a glow ring around the
+ * whole body). The class drives a CSS animation (see app.css .blog-write-flash);
+ * keeping it on for the duration means blocks that mount during the content
+ * reconcile also animate, so it's robust to the editor's async content update.
+ */
+export function flashWrite(el: HTMLElement | null): void {
+  if (!el) return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  el.classList.add("blog-write-flash");
+  window.setTimeout(() => el.classList.remove("blog-write-flash"), 1700);
+}

@@ -31,50 +31,67 @@
 
 html,
 body {
-  @apply text-zinc-100;
-  background: oklch(0.155 0.005 60);
-  color-scheme: dark;
+  background-color: var(--color-background-primary, oklch(0.155 0.005 60));
+  color: var(--color-text-primary, oklch(0.88 0.005 90));
+  color-scheme: light dark;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  /* Radius tokens — --radius (native) replaced by standard --border-radius-* keys.
+     Tailwind's rounded-sm/md/lg/xl/2xl map to the closest design-system step.
+     3xl and 4xl have no standard counterpart above xl; capped at xl for review. */
+  --radius-sm:  var(--border-radius-xs,  2px);
+  --radius-md:  var(--border-radius-sm,  4px);
+  --radius-lg:  var(--border-radius-md,  5px);
+  --radius-xl:  var(--border-radius-lg,  8px);
+  --radius-2xl: var(--border-radius-xl,  12px);
+  --radius-3xl: var(--border-radius-xl,  12px);
+  --radius-4xl: var(--border-radius-xl,  12px);
+
+  /* ── Color tokens: standard-var primary, oklch dark-theme literal fallback ──
+     Fallbacks reproduce the blog's dark look in standalone (non-AppBridge) mode.
+     Mapping source: COLOR_MAP in mcpHostContext.ts, reversed native→standard. */
+
+  /* Clean 1-to-1 mappings from COLOR_MAP */
+  --color-background:      var(--color-background-primary,   oklch(0.155 0.005 60));
+  --color-foreground:      var(--color-text-primary,         oklch(0.88 0.005 90));
+  --color-card:            var(--color-background-secondary, oklch(0.205 0.005 60));
+  --color-card-foreground: var(--color-text-secondary,       oklch(0.6 0.005 90));
+  --color-popover:         var(--color-background-tertiary,  oklch(0.205 0.005 60));
+  --color-muted:           var(--color-background-ghost,     oklch(0.26 0.005 60));
+  --color-muted-foreground:var(--color-text-tertiary,        oklch(0.5 0.005 90));
+  --color-accent:          var(--color-background-info,      oklch(0.26 0.005 60));
+  --color-accent-foreground:var(--color-text-ghost,          oklch(0.88 0.005 90));
+  --color-primary:         var(--color-text-info,            oklch(0.88 0.005 90));
+  --color-destructive:     var(--color-background-danger,    oklch(0.704 0.191 22.216));
+  --color-border:          var(--color-border-primary,       oklch(0.26 0.005 60));
+  --color-input:           var(--color-border-secondary,     oklch(0.26 0.005 60));
+  --color-ring:            var(--color-ring-primary,         oklch(0.556 0 0));
+
+  /* No standard counterpart — best-fit standard var + literal fallback.
+     HUMAN REVIEW: these tokens lack a 1-to-1 COLOR_MAP entry. */
+  --color-popover-foreground:   var(--color-text-primary,         oklch(0.88 0.005 90));
+  --color-primary-foreground:   var(--color-background-primary,   oklch(0.155 0.005 60));
+  --color-secondary:            var(--color-background-secondary, oklch(0.205 0.005 60));
+  --color-secondary-foreground: var(--color-text-primary,         oklch(0.88 0.005 90));
+
+  /* Chart colors — no standard counterpart; fixed data-viz palette (dark values). */
+  --color-chart-1: oklch(0.488 0.243 264.376);
+  --color-chart-2: oklch(0.696 0.17 162.48);
+  --color-chart-3: oklch(0.769 0.188 70.08);
+  --color-chart-4: oklch(0.627 0.265 303.9);
+  --color-chart-5: oklch(0.645 0.246 16.439);
+
+  /* Sidebar tokens — no standard counterpart; best-fit + literal fallback. */
+  --color-sidebar:                    var(--color-background-secondary, oklch(0.205 0.005 60));
+  --color-sidebar-foreground:         var(--color-text-primary,         oklch(0.88 0.005 90));
+  --color-sidebar-primary:            var(--color-text-info,            oklch(0.488 0.243 264.376));
+  --color-sidebar-primary-foreground: var(--color-text-primary,         oklch(0.88 0.005 90));
+  --color-sidebar-accent:             var(--color-background-ghost,     oklch(0.26 0.005 60));
+  --color-sidebar-accent-foreground:  var(--color-text-primary,         oklch(0.88 0.005 90));
+  --color-sidebar-border:             var(--color-border-primary,       oklch(0.26 0.005 60));
+  --color-sidebar-ring:               var(--color-ring-primary,         oklch(0.556 0 0));
 }
 
 :root {
@@ -171,7 +188,7 @@ body {
 
 /* PDF Viewer text layer highlighting */
 .react-pdf__Page__textContent mark {
-  @apply bg-yellow-300/50 text-zinc-900 rounded px-0.5;
+  @apply bg-yellow-300/50 text-background rounded px-0.5;
 }
 
 /* Shiki syntax highlighting */
@@ -185,7 +202,7 @@ body {
 
 /* Shiki generates its own pre with inline styles for background */
 .prose pre.shiki {
-  @apply p-4 rounded-lg overflow-x-auto !border !border-zinc-700;
+  @apply p-4 rounded-lg overflow-x-auto !border !border-border;
   font-family: var(--font-mono);
   background-color: #0d1117 !important;
 }
@@ -202,8 +219,8 @@ body {
 }
 
 .copy-button {
-  @apply absolute top-2 right-2 p-2 rounded-md bg-zinc-700/50 text-zinc-400
-         hover:bg-zinc-600/50 hover:text-zinc-200 transition-colors cursor-pointer;
+  @apply absolute top-2 right-2 p-2 rounded-md bg-secondary/50 text-card-foreground
+         hover:bg-secondary/70 hover:text-foreground transition-colors cursor-pointer;
 }
 
 .copy-button .check-icon {
@@ -218,48 +235,159 @@ body {
   @apply block text-emerald-400;
 }
 
-/* TipTap Editor Styles */
-.ProseMirror {
-  @apply min-h-[400px] bg-zinc-950 focus:outline-none;
+/* ── Blog editor — scoped theme adoption ──────────────────────────────────
+   All prose/editor colors are driven from mcp-ext host CSS vars with
+   blog-dark fallbacks. The fallbacks reproduce the current dark look exactly,
+   so the standalone path and public site are visually unchanged.
+
+   Critical scoping rule: EVERY color rule that touches .prose or .ProseMirror
+   lives inside .blog-editor so the public BlogPost renderer (which also uses
+   .prose + Shiki) is never affected.
+
+   The @tailwindcss/typography plugin drives colors via --tw-prose-* custom
+   properties on the .prose element itself. We override them on .blog-editor.prose
+   (same element, same specificity level) so all prose sub-elements — including
+   table, kbd, captions — inherit the themed palette without per-element selectors. */
+
+.blog-editor.prose {
+  /* Override every --tw-prose-* var so typography plugin uses host theme colors.
+     Non-color rules (spacing, sizing) remain from the plugin defaults. */
+  --tw-prose-body:         var(--color-text-secondary,   oklch(0.6 0.005 90));
+  --tw-prose-headings:     var(--color-text-primary,     oklch(0.88 0.005 90));
+  --tw-prose-lead:         var(--color-text-secondary,   oklch(0.6 0.005 90));
+  --tw-prose-links:        #34d399;
+  --tw-prose-bold:         var(--color-text-primary,     oklch(0.88 0.005 90));
+  --tw-prose-counters:     var(--color-text-tertiary,    oklch(0.5 0.005 90));
+  --tw-prose-bullets:      var(--color-text-tertiary,    oklch(0.5 0.005 90));
+  --tw-prose-hr:           var(--color-border-primary,   oklch(0.26 0.005 60));
+  --tw-prose-quotes:       var(--color-text-secondary,   oklch(0.6 0.005 90));
+  --tw-prose-quote-borders:var(--color-border-primary,   oklch(0.26 0.005 60));
+  --tw-prose-captions:     var(--color-text-tertiary,    oklch(0.5 0.005 90));
+  --tw-prose-kbd:          var(--color-text-primary,     oklch(0.88 0.005 90));
+  --tw-prose-kbd-shadows:  oklch(0.88 0.005 90 / 10%);
+  --tw-prose-code:         #34d399;
+  --tw-prose-pre-code:     var(--color-text-secondary,   oklch(0.6 0.005 90));
+  --tw-prose-pre-bg:       var(--color-background-secondary, oklch(0.205 0.005 60));
+  --tw-prose-th-borders:   var(--color-border-primary,   oklch(0.26 0.005 60));
+  --tw-prose-td-borders:   var(--color-border-secondary, oklch(0.26 0.005 60));
+
+  /* Heading font: mono, normal weight, sized via host typography vars */
+  font-family: var(--font-sans, inherit);
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
-  @apply text-zinc-600 float-left h-0 pointer-events-none;
+.blog-editor.prose :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: normal;
+}
+
+.blog-editor.prose h1 { font-size: var(--font-heading-xl-size, 1.25rem); }
+.blog-editor.prose h2 { font-size: var(--font-heading-lg-size, 1.125rem); }
+.blog-editor.prose h3 { font-size: var(--font-heading-md-size, 1rem); }
+
+/* Compact line spacing — the typography plugin defaults to line-height 1.75 and
+   ~1.25em block margins, which read as loose in a working editor. Tighten both. */
+.blog-editor.prose :where(p, ul, ol, blockquote) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+}
+.blog-editor.prose :where(li) {
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
+  line-height: 1.5;
+}
+.blog-editor.prose :where(li > p) { margin: 0; }
+.blog-editor.prose :where(h1, h2, h3, h4, h5, h6) {
+  margin-top: 0.8em;
+  margin-bottom: 0.35em;
+  line-height: 1.25;
+}
+
+/* Links: emerald, no underline by default, underline on hover */
+.blog-editor.prose a {
+  color: #34d399;
+  text-decoration: none;
+}
+.blog-editor.prose a:hover {
+  text-decoration: underline;
+}
+
+/* Inline code: emerald on secondary bg, strip prose tick marks */
+.blog-editor.prose :where(code):not(pre code) {
+  color: #34d399;
+  background-color: var(--color-background-secondary, oklch(0.205 0.005 60));
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--border-radius-sm, 4px);
+}
+.blog-editor.prose :where(code):not(pre code)::before,
+.blog-editor.prose :where(code):not(pre code)::after {
+  content: none;
+}
+
+/* Pre blocks: secondary bg + border */
+.blog-editor.prose pre {
+  background-color: var(--color-background-secondary, oklch(0.205 0.005 60));
+  border: 1px solid var(--color-border-primary, oklch(0.26 0.005 60));
+  overflow-x: auto;
+}
+
+/* ProseMirror surface — scoped under .blog-editor */
+.blog-editor .ProseMirror {
+  min-height: 16rem;
+  background: var(--color-background-primary, oklch(0.155 0.005 60));
+  color: var(--color-text-secondary, oklch(0.6 0.005 90));
+  padding: 0.75rem 0;
+  outline: none;
+}
+
+.blog-editor .ProseMirror:focus {
+  outline: none;
+}
+
+/* Placeholder text */
+.blog-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-text-tertiary, oklch(0.5 0.005 90));
+  float: left;
+  height: 0;
+  pointer-events: none;
   content: attr(data-placeholder);
 }
 
-.ProseMirror ::selection {
-  @apply bg-emerald-400/30;
-}
-
-.ProseMirror:focus {
-  @apply outline-none;
-}
-
-/* Editor code blocks with syntax highlighting (lowlight/hljs) */
-.ProseMirror pre.hljs {
-  @apply rounded-lg overflow-x-auto !border !border-zinc-700;
-  background-color: #0d1117 !important;
-  padding: 1rem !important;
-}
-
-/* Reset code inside pre blocks (syntax-highlighted by hljs) */
-.ProseMirror pre code {
-  @apply !bg-transparent !p-0 text-inherit;
-}
-
-/* Inline code styling (not inside pre blocks) */
-.ProseMirror code:not(pre code) {
-  @apply text-emerald-400 bg-zinc-900 px-1.5 py-0.5 rounded;
-}
-
-/* Editor placeholder */
-.ProseMirror .is-empty::before {
-  @apply text-zinc-600;
+.blog-editor .ProseMirror .is-empty::before {
+  color: var(--color-text-tertiary, oklch(0.5 0.005 90));
   content: attr(data-placeholder);
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Text selection: fixed emerald tint */
+.blog-editor .ProseMirror ::selection {
+  background-color: rgba(52, 211, 153, 0.3);
+}
+
+/* Editor code blocks with hljs syntax highlighting */
+.blog-editor .ProseMirror pre.hljs {
+  border-radius: var(--border-radius-md, 5px);
+  overflow-x: auto;
+  border: 1px solid var(--color-border-primary, oklch(0.26 0.005 60));
+  background-color: #0d1117 !important;
+  padding: 1rem !important;
+}
+
+/* Reset code inside hljs pre blocks */
+.blog-editor .ProseMirror pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  color: inherit;
+}
+
+/* Inline code in ProseMirror (not inside pre) */
+.blog-editor .ProseMirror code:not(pre code) {
+  color: #34d399;
+  background-color: var(--color-background-secondary, oklch(0.205 0.005 60));
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--border-radius-sm, 4px);
 }
 
 /* Fade out animation for save notification */
@@ -277,6 +405,22 @@ body {
 
 .animate-fade-out {
   animation: fade-out 2s ease-out forwards;
+}
+
+/* Write-flash — emerald highlight swept across the blocks an agent just wrote,
+   fading out. Applied (and removed after ~1.7s) by flashWrite() in glow.ts on
+   the editor body; descendant blocks animate, so it marks the written text. */
+@keyframes blog-write-flash {
+  0%   { background-color: rgba(16, 185, 129, 0.55); color: #fff; }
+  55%  { background-color: rgba(16, 185, 129, 0.55); color: #fff; }
+  100% { background-color: transparent; }
+}
+.blog-write-flash :is(p, h1, h2, h3, h4, h5, h6, li, blockquote, pre) {
+  animation: blog-write-flash 1.6s ease-out;
+  border-radius: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .blog-write-flash :is(p, h1, h2, h3, h4, h5, h6, li, blockquote, pre) { animation: none; }
 }
 
 /* ── Agent-driven UI automation ────────────────────────────────────────
@@ -317,4 +461,18 @@ body {
   text-decoration: line-through;
   text-decoration-color: rgba(255, 45, 32, 0.8);
   color: rgb(252, 165, 165);
+}
+
+/* Light theme (host-driven, MCP view): the dark-tuned mint/red text above washes
+   out on a light background. Saturate the highlight and switch to white text so
+   the proposed words stay legible through it. */
+[data-theme="light"] .ano-sugg-insert {
+  background-color: rgba(16, 185, 129, 0.85);
+  border-bottom-color: rgba(6, 95, 70, 0.9);
+  color: #fff;
+}
+[data-theme="light"] .ano-sugg-delete {
+  background-color: rgba(220, 38, 38, 0.80);
+  text-decoration-color: rgba(127, 29, 29, 0.95);
+  color: #fff;
 }

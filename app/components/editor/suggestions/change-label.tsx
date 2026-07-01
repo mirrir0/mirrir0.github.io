@@ -18,7 +18,7 @@ export function ChangeBody({ suggestion }: { suggestion: PendingSuggestion }) {
     return (
       <>
         <span className="line-through text-red-300/90">{trim(s.deleted)}</span>
-        <span className="text-zinc-600"> → </span>
+        <span className="text-muted-foreground"> → </span>
         <span className="text-emerald-300">{trim(s.inserted)}</span>
       </>
     );

@@ -18,9 +18,13 @@ interface TiptapEditorProps {
   // Surfaces the editor instance so the route can drive it (agent edits,
   // accept/reject). Called with the instance on ready and null on teardown.
   onEditor?: (editor: Editor | null) => void;
+  // Sticky offset for the toolbar within its scroll container. The standalone
+  // route scrolls under a ~120px fixed page header; the MCP panel scrolls inside
+  // its own body and passes "0px" to avoid a dead gap above the toolbar.
+  toolbarTop?: string;
 }
 
-export default function TiptapEditor({ content, onChange, onEditor }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onEditor, toolbarTop = "120px" }: TiptapEditorProps) {
   const [isDocPickerOpen, setIsDocPickerOpen] = useState(false);
   const [docPickerTab, setDocPickerTab] = useState<'search' | 'upload'>('search');
 
@@ -81,27 +85,21 @@ export default function TiptapEditor({ content, onChange, onEditor }: TiptapEdit
   }, [editor, onEditor]);
 
   return (
-    <div className="flex flex-col">
-      <div className="sticky top-[120px] z-10 bg-zinc-950">
+    // max-w-3xl mx-auto matches the public app's reading column (panel.tsx),
+    // so the editing measure equals the published measure.
+    <div className="flex flex-col max-w-3xl mx-auto w-full">
+      <div
+        className="sticky z-10"
+        style={{ top: toolbarTop, background: "var(--color-background-primary, oklch(0.155 0.005 60))" }}
+      >
         <EditorToolbar editor={editor} onOpenDocumentPicker={() => setIsDocPickerOpen(true)} />
       </div>
       <div className="flex-1">
+        {/* prose max-w-none provides typography plugin structure;
+            blog-editor scopes all color/theme rules via app.css */}
         <EditorContent
           editor={editor}
-          className="min-h-[400px] p-4
-            prose prose-invert prose-zinc max-w-none
-            prose-headings:font-mono prose-headings:font-normal
-            prose-h1:text-xl prose-h1:md:text-2xl prose-h2:text-lg prose-h2:md:text-xl prose-h3:text-base prose-h3:md:text-lg
-            prose-p:text-zinc-300 prose-p:leading-relaxed
-            prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-            prose-code:text-emerald-400 prose-code:bg-zinc-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800 prose-pre:overflow-x-auto
-            prose-strong:text-zinc-100
-            prose-ul:text-zinc-300 prose-ol:text-zinc-300
-            prose-li:marker:text-zinc-600
-            prose-hr:border-zinc-800
-            prose-blockquote:border-zinc-700 prose-blockquote:text-zinc-400
-            [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px]"
+          className="blog-editor prose max-w-none"
         />
       </div>
       <DocumentPicker
